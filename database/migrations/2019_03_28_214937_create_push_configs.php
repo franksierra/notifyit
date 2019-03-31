@@ -15,7 +15,12 @@ class CreatePushConfigs extends Migration
     {
         Schema::create('push_configs', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->unsignedBigInteger('app_id');
+            $table->string('endpoint',255);
+            $table->string('api_key',255);
             $table->timestamps();
+
+            $table->foreign('app_id')->references('id')->on('apps');
         });
     }
 

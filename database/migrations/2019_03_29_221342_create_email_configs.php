@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateAppKeysTable extends Migration
+class CreateEmailConfigs extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,15 @@ class CreateAppKeysTable extends Migration
      */
     public function up()
     {
-        Schema::create('app_keys', function (Blueprint $table) {
+        Schema::create('email_configs', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('app_id');
-            $table->enum("platform", ['android', 'ios', 'web', 'other']);
-            $table->string("api_key", 255);
-            $table->string("ip_addr", 255);
+            $table->string('host', 255);
+            $table->string('user', 255);
+            $table->string('pass', 255);
+            $table->integer('port');
+            $table->string('mail_type', 255);
+            $table->string('subject_prefix', 255)->default('');
             $table->timestamps();
 
             $table->foreign('app_id')->references('id')->on('apps');
@@ -32,6 +35,6 @@ class CreateAppKeysTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('app_keys');
+        Schema::dropIfExists('email_configs');
     }
 }
