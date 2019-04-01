@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateEmailConfigs extends Migration
+class CreatePushSettings extends Migration
 {
     /**
      * Run the migrations.
@@ -13,15 +13,11 @@ class CreateEmailConfigs extends Migration
      */
     public function up()
     {
-        Schema::create('email_configs', function (Blueprint $table) {
+        Schema::create('push_settings', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('app_id');
-            $table->string('host', 255);
-            $table->string('user', 255);
-            $table->string('pass', 255);
-            $table->integer('port');
-            $table->string('mail_type', 255);
-            $table->string('subject_prefix', 255)->default('');
+            $table->string('endpoint',255);
+            $table->string('api_key',255);
             $table->timestamps();
 
             $table->foreign('app_id')->references('id')->on('apps');
@@ -35,6 +31,6 @@ class CreateEmailConfigs extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('email_configs');
+        Schema::dropIfExists('push_settings');
     }
 }
