@@ -1,15 +1,15 @@
 ### JetBrains
-.idea/
+/.idea/
 
 ### Laravel template
-vendor/
-node_modules/
+/vendor/
+/node_modules/
 npm-debug.log
 yarn-error.log
 
 # Laravel 5 & Lumen specific
-public/storage
-public/hot
+/public/storage
+/public/hot
 storage/*.key
 .env.*.php
 .env.php

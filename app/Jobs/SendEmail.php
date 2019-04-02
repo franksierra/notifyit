@@ -8,19 +8,25 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 
-class ProcessPushNotification implements ShouldQueue
+use App\Mail\SendEmail as SendEmailMail;
+use Illuminate\Support\Facades\Mail;
+
+class SendEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    protected $details;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($details)
     {
-        //
+        $this->details = $details;
     }
+
 
     /**
      * Execute the job.
@@ -29,6 +35,7 @@ class ProcessPushNotification implements ShouldQueue
      */
     public function handle()
     {
-        //
+        $email = new SendEmailMail();
+        Mail::to($this->details['email'])->send($email);
     }
 }
