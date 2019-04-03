@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -12,9 +13,9 @@ use Illuminate\Http\Request;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-Route::get('email-test', function(){
+Route::post('email', function(){
     $details['email'] = 'sierrafayad@gmail.com';
-    dispatch(new App\Jobs\SendEmail($details));
+    dispatch(new App\Jobs\SendEmailJob($details));
 
     dd('done');
 });
