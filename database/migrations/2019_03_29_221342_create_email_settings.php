@@ -16,10 +16,12 @@ class CreateEmailSettings extends Migration
         Schema::create('email_settings', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('app_id');
+            $table->string('driver', 255);
             $table->string('host', 255);
-            $table->string('user', 255);
-            $table->string('pass', 255);
             $table->integer('port');
+            $table->string('encryption', 255);
+            $table->string('username', 255);
+            $table->string('password', 255);
             $table->string('mail_type', 255);
             $table->string('subject_prefix', 255)->default('');
             $table->timestamps();
