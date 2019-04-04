@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -23,6 +25,16 @@ class CreateUsersTable extends Migration
             $table->rememberToken();
             $table->timestamps();
         });
+
+        if ((new User)->where('username', 'admin')->doesntExist()) {
+            User::create([
+                'name' => 'Administrator',
+                'username' => 'admin',
+                'email' => 'fsierra@plusservices.ec',
+                'email_verified_at' => Carbon::now(),
+                'password' => '@dminNotifyit',
+            ]);
+        }
     }
 
     /**
