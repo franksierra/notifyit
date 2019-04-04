@@ -13,14 +13,18 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-Route::post('email', function(){
-    $details['email'] = 'sierrafayad@gmail.com';
-    dispatch(new App\Jobs\SendEmailJob($details));
 
-    dd('done');
+Route::prefix('v1')->namespace('v1')->group(function () {
+    Route::prefix('emails')->namespace('Emails')->group(function () {
+        Route::get('','')->name('');
+    });
+
+
+//    Route::get('email', "api\\v1\\EmailController@index");
+    Route::post('email', "EmailController@send");
 });
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
-});
+//Route::middleware('auth:api')->get('/user', function (Request $request) {
+//    return $request->user();
+//});
 
