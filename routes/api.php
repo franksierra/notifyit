@@ -16,12 +16,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->namespace('v1')->group(function () {
     Route::prefix('emails')->namespace('Emails')->group(function () {
-        Route::get('','')->name('');
+        Route::post('', 'EmailsController@queue')->name('api.v1.emails.queue');
+//        Route::get('','EmailController@index')->name('api.v1.emails.list');
+//        Route::get("{id}", "ApiBranchesController@show");
     });
-
-
-//    Route::get('email', "api\\v1\\EmailController@index");
-    Route::post('email', "EmailController@send");
 });
 
 //Route::middleware('auth:api')->get('/user', function (Request $request) {
