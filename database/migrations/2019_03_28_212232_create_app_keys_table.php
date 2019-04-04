@@ -17,11 +17,13 @@ class CreateAppKeysTable extends Migration
             $table->bigIncrements('id');
             $table->unsignedBigInteger('app_id');
             $table->enum("platform", ['android', 'ios', 'web', 'other']);
-            $table->string("api_key", 255);
-            $table->string("ip_addr", 255);
+            $table->string("key", 128);
+            $table->boolean('active')->default(1);
             $table->timestamps();
 
             $table->foreign('app_id')->references('id')->on('apps');
+
+            $table->index('key');
         });
     }
 

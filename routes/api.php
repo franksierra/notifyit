@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('v1')->namespace('v1')->group(function () {
+Route::prefix('v1')->namespace('v1')->middleware('api.authorization')->group(function () {
     Route::prefix('emails')->namespace('Emails')->group(function () {
         Route::post('', 'EmailsController@queue')->name('api.v1.emails.queue');
 //        Route::get('','EmailController@index')->name('api.v1.emails.list');
