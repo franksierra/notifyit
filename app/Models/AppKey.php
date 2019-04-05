@@ -3,16 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AppKey extends Model
 {
-    const EVENT_NAME_CREATED     = 'created';
-    const EVENT_NAME_ACTIVATED   = 'activated';
-    const EVENT_NAME_DEACTIVATED = 'deactivated';
-    const EVENT_NAME_DELETED     = 'deleted';
 
-    protected static $nameRegex = '/^[a-z0-9-]{1,255}$/';
-
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'app_id');
+    }
 
     /**
      * Get ApiKey record by key value
@@ -23,7 +22,7 @@ class AppKey extends Model
     public static function getByKey($key)
     {
         return self::where([
-            'key'    => $key,
+            'key' => $key,
             'active' => 1
         ])->first();
     }

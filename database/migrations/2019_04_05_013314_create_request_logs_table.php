@@ -23,9 +23,9 @@ class CreateRequestLogsTable extends Migration
             $table->longText('headers');
             $table->longText('params');
             $table->ipAddress('ip');
-            $table->smallInteger('status_code');
-            $table->longText('response');
-            $table->float('exec_time');
+            $table->smallInteger('status_code')->nullable();
+            $table->longText('response')->nullable();
+            $table->float('exec_time')->nullable();
 
             $table->timestamps();
 
