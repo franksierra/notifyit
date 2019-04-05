@@ -19,7 +19,7 @@ class EmailsController extends Controller
         ]);
 
         $details = [
-            'app_id' => 0,
+            'app_id' => $request->request_log->app_id,
 
             'uid' => uniqid("mail_"),
             'name' => $request->get('name'),
