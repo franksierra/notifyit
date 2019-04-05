@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\AppKey;
+use App\Models\RequestLog;
 use Illuminate\Http\Request;
 use Closure;
 
@@ -40,6 +41,14 @@ class ApiAuthorization
 
     protected function logAccessEvent(Request $request, AppKey $apiKey = null)
     {
+        $request_log = new RequestLog;
+        $request_log->save([
+            'origin' => 'api',
+            'app_id' => 'Unauthorized',
+            'message' => 'Unauthorized',
+            'message' => 'Unauthorized',
+        ]);
+
 
 //        $event = new ApiKeyAccessEvent;
 //        $event->api_key_id = $apiKey->id;
