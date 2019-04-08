@@ -16,8 +16,8 @@ class ApiAuthorization
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request $request
-     * @param  \Closure $next
+     * @param \Illuminate\Http\Request $request
+     * @param \Closure $next
      * @return mixed
      */
     public function handle($request, Closure $next)
@@ -51,7 +51,7 @@ class ApiAuthorization
     {
         $request_log = new RequestLog([
             'origin' => 'api',
-            'app_id' => $apiKey->app_id,
+            'app_id' => $apiKey->app_id ?? null,
 //            'user_id' => $apiKey->app_id,
             'method' => $request->getMethod(),
             'uri' => $request->getRequestUri(),
