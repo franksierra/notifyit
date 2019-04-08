@@ -13,7 +13,8 @@ class EmailsController extends Controller
         $this->validate($request, [
             'name' => 'required|max:255',
             'from' => 'required|email|max:255',
-            'to' => 'required|email',
+            'to' => 'required|array|min:1',
+            'to.*' => 'required|email|distinct',
             'subject' => 'required|max:255',
             'body' => 'required',
         ]);
