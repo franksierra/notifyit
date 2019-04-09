@@ -11,14 +11,17 @@ class SendEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    private $details = [];
+
     /**
      * Create a new message instance.
      *
-     * @return void
+     * @param $details
      */
-    public function __construct()
+    public function __construct($details)
     {
-        //
+        $this->details = $details;
+
     }
 
     /**
@@ -28,6 +31,24 @@ class SendEmail extends Mailable
      */
     public function build()
     {
-        return $this->view('emails.test');
+        $html = $this->details['body'];
+        foreach ($this->details['embedded'] as $embedded) {
+            $html = str_replace(
+                'cid:' . $embedded["name"],
+                "data:image/" . $embedded["format"] . "base64, " . $embedded["b64"],
+                $html
+            );
+        }
+        $this->subject($this->details['subject']);
+        $this->html($html);
+        $this->text($this->details['alt_body']);
+
+        $this->buildAttachments()
+
+
+//        foreach ($this->details['embedded'] as $nombre => $archivo) {
+//            $this->attachData('', '', []);
+//        }
+        return $this;
     }
 }
