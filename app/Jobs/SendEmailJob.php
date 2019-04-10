@@ -4,12 +4,12 @@ namespace App\Jobs;
 
 use App\Models\EmailSetting;
 use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Message;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 
-use App\Mail\SendEmail;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
 
@@ -74,11 +74,34 @@ class SendEmailJob implements ShouldQueue
         if (!empty($email_conf->subject_prefix)) {
             $this->details['subject'] = "[" . $email_conf->subject_prefix . "] " . $this->details['subject'];
         }
+        Mail::send([], [], function (Message $message) {
+            $message->to($this->details['to']);
+            $message->cc($this->details['cc']);
+            $message->bcc($this->details['bcc']);
+            $message->subject($this->details['subject']);
 
-        $email = new SendEmail($this->details);
-        Mail::to($this->details['to'])
-            ->cc($this->details['cc'])
-            ->bcc($this->details['bcc'])
-            ->send($email);
+            foreach ($this->details['embedded'] as $embedded) {
+                $newCID = $message->embedData(
+                    base64_decode($embedded["b64"]),
+                    $embedded["name"] . "." . $embedded["format"],
+                    'image/' . $embedded["format"]
+                );
+                $this->details['body'] = str_replace(
+                    "cid:" . $embedded["name"],
+                    $newCID,
+                    $this->details['body']
+                );
+            }
+            $message->addPart($this->details['body'], "text/html", "utf-8");
+            $message->addpart($this->details['alt_body'], "text/plain", "utf-8");
+
+            foreach ($this->details['attachments'] as $attachment) {
+                $message->attachData(
+                    base64_decode($attachment["b64"]),
+                    $attachment["name"] . "." . $attachment["format"]
+                );
+            }
+
+        });
     }
 }
