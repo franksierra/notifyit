@@ -30,9 +30,9 @@ class CreateUsersTable extends Migration
             User::create([
                 'name' => 'Administrator',
                 'username' => 'admin',
-                'email' => 'fsierra@plusservices.ec',
+                'email' => 'admin@notifyit.loc',
                 'email_verified_at' => Carbon::now(),
-                'password' => '@dminNotifyit',
+                'password' => 'admin',
             ]);
         }
     }
