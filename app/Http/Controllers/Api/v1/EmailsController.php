@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\api\v1\Emails;
+namespace App\Http\Controllers\api\v1;
 
 use App\Jobs\SendEmailJob;
 use App\Http\Controllers\Controller;
