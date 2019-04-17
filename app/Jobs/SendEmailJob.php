@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\EmailSetting;
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Message;
 use Illuminate\Queue\SerializesModels;
@@ -24,12 +25,12 @@ class SendEmailJob implements ShouldQueue
      *
      * @var int
      */
-    public $tries = 3;
+    public $tries = 1;
 
     /**
      * Create a new job instance.
      *
-     * @return void
+     * @param $details
      */
     public function __construct($details)
     {
@@ -41,6 +42,7 @@ class SendEmailJob implements ShouldQueue
      * Execute the job.
      *
      * @return void
+     * @throws Exception
      */
     public function handle()
     {
@@ -48,31 +50,32 @@ class SendEmailJob implements ShouldQueue
          * GetConfigs Based on the details
          */
 
-        $email_conf = EmailSetting::whereAppId($this->details['app_id'])->first();
-        if (!$email_conf) {
-            $no_config_set = new \Exception(
-                "The app doesn't have any email settings set"
+        $job_config = EmailSetting::whereAppId($this->details['app_id'])->first();
+        if (!$job_config) {
+            $no_config_set = new Exception(
+                "The app doesn't have any settings configured"
             );
             $this->fail($no_config_set);
+            throw $no_config_set;
         }
         $config = [
-            'driver' => $email_conf->driver,
-            'host' => $email_conf->host,
-            'port' => $email_conf->port,
+            'driver' => $job_config->driver,
+            'host' => $job_config->host,
+            'port' => $job_config->port,
             'from' => [
                 'address' => $this->details['from'],
                 'name' => $this->details['name']
             ],
-            'encryption' => $email_conf->encryption,
-            'username' => $email_conf->username,
-            'password' => $email_conf->password,
+            'encryption' => $job_config->encryption,
+            'username' => $job_config->username,
+            'password' => $job_config->password,
             'sendmail' => '/usr/sbin/sendmail -bs',
             'pretend' => false,
         ];
         Config::set('mail', $config);
 
-        if (!empty($email_conf->subject_prefix)) {
-            $this->details['subject'] = "[" . $email_conf->subject_prefix . "] " . $this->details['subject'];
+        if (!empty($job_config->subject_prefix)) {
+            $this->details['subject'] = "[" . $job_config->subject_prefix . "] " . $this->details['subject'];
         }
         Mail::send([], [], function (Message $message) {
             $message->to($this->details['to']);
