@@ -8,6 +8,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\Config;
 
 class SendPushJob implements ShouldQueue
 {
@@ -43,15 +44,34 @@ class SendPushJob implements ShouldQueue
         /**
          * GetConfigs Based on the details
          */
+        $job_config = PushSetting::whereAppId($this->details['app_id'])->first();
+        if (!$job_config) {
+            $no_config_set = new Exception(
+                "The app doesn't have any settings configured"
+            );
+            $this->fail($no_config_set);
+            throw $no_config_set;
+        }
+        $config = [
+            'driver' => $job_config->driver,
+            'host' => $job_config->host,
+            'port' => $job_config->port,
+            'from' => [
+                'address' => $this->details['from'],
+                'name' => $this->details['name']
+            ],
+            'encryption' => $job_config->encryption,
+            'username' => $job_config->username,
+            'password' => $job_config->password,
+            'sendmail' => '/usr/sbin/sendmail -bs',
+            'pretend' => false,
+        ];
+        Config::set('push', $config);
 
-//        $job_config = ::whereAppId($this->details['app_id'])->first();
-//        if (!$job_config) {
-//            $no_config_set = new Exception(
-//                "The app doesn't have any settings configured"
-//            );
-//            $this->fail($no_config_set);
-//            throw $no_config_set;
-//        }
-        //
+        $client = new \GuzzleHttp\Client();
+        $res = $client->request('GET', 'https://api.github.com/user', [
+            'auth' => ['user', 'pass']
+        ]);
+
     }
 }
