@@ -17,11 +17,11 @@ class CreateEmailSettings extends Migration
             $table->bigIncrements('id');
             $table->unsignedBigInteger('app_id');
             $table->string('driver', 255);
-            $table->string('host', 255);
-            $table->integer('port');
-            $table->string('encryption', 255);
-            $table->string('username', 255);
-            $table->string('password', 255);
+            $table->string('host', 255)->nullable();
+            $table->integer('port')->nullable();
+            $table->string('encryption', 255)->nullable();
+            $table->string('username', 255)->nullable();
+            $table->string('password', 255)->nullable();
             $table->string('mail_type', 255);
             $table->string('subject_prefix', 255)->default('');
             $table->timestamps();

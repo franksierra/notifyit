@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreatePushSettings extends Migration
+class CreateSmsSettingsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,12 @@ class CreatePushSettings extends Migration
      */
     public function up()
     {
-        Schema::create('push_settings', function (Blueprint $table) {
+        Schema::create('sms_settings', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('app_id');
-            $table->string('endpoint',255);
-            $table->string('api_key',255);
+            $table->string('endpoint', 255);
+            $table->enum('type', ['REST', 'SOAP'])->default('REST');
+            $table->json('payload');
             $table->timestamps();
 
             $table->foreign('app_id')->references('id')->on('apps');
@@ -31,6 +32,6 @@ class CreatePushSettings extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('push_settings');
+        Schema::dropIfExists('sms_settings');
     }
 }

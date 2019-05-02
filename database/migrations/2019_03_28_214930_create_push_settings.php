@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
-class CreatePushDevices extends Migration
+class CreatePushSettings extends Migration
 {
     /**
      * Run the migrations.
@@ -13,13 +13,11 @@ class CreatePushDevices extends Migration
      */
     public function up()
     {
-        Schema::create('push_devices', function (Blueprint $table) {
+        Schema::create('push_settings', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('app_id');
-            $table->enum("platform", ['android', 'ios', 'web', 'other']);
-            $table->string('uid', 255)->index();
-            $table->string('identity', 255);
-            $table->string('regid', 255);
+            $table->string('endpoint', 255);
+            $table->string('api_key', 255);
             $table->timestamps();
 
             $table->foreign('app_id')->references('id')->on('apps');
@@ -33,6 +31,6 @@ class CreatePushDevices extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('push_devices');
+        Schema::dropIfExists('push_settings');
     }
 }

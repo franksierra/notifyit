@@ -30,7 +30,7 @@ class CreateUsersTable extends Migration
             User::create([
                 'name' => 'Administrator',
                 'username' => 'admin',
-                'email' => 'admin@notifyit.loc',
+                'email' => 'admin@notifyit.io',
                 'email_verified_at' => Carbon::now(),
                 'password' => 'admin',
             ]);
