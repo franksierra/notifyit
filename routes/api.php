@@ -17,8 +17,8 @@ Route::prefix('v1')->namespace('v1')->middleware('api.authorization')->group(fun
     Route::prefix('emails')->group(function () {
         Route::post('', 'EmailsController@queue')->name('api.v1.emails.queue');
     });
-    Route::prefix('messages')->group(function () {
-        Route::post('', 'SMSController@queue')->name('api.v1.messages.queue');
+    Route::prefix('sms')->group(function () {
+        Route::post('', 'SMSController@queue')->name('api.v1.sms.queue');
     });
     Route::prefix('notifications')->group(function () {
         Route::post('', 'PushController@queue')->name('api.v1.notifications.queue');
