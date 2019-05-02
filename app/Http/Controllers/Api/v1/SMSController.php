@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Api\v1;
 
+use App\Jobs\SendSMSJob;
+use App\Models\SmsLog;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Str;
 
 class SMSController extends Controller
 {
@@ -12,18 +15,31 @@ class SMSController extends Controller
         $this->validate($request, [
             'country' => 'required|max:2',
             'to' => 'required|json',
-            'body' => 'required|string',
+            'text' => 'required|string',
         ]);
         $json_request = $request->all();
         $json_request["to"] = json_decode($json_request["to"]);
         $request->merge($json_request);
         $this->validate($request, [
-            'to.*' => 'number|distinct'
+            'to.*' => 'string|distinct'
         ]);
+        $details = [
+            'app_id' => $request->request_log->app_id,
+            'uuid' => Str::uuid(),
 
-        dispatch_now(new SendSMSJob($details));
+            'country' => $request->get('country'),
+            'to' => $request->get('to'),
+            'text' => $request->get('text')
+        ];
+
+        SmsLog::create([
+            'uuid' => $details['uuid'],
+            'status' => 'queued',
+            'data' => json_encode([])
+        ]);
+        dispatch(new SendSMSJob($details));
         return response()->json([
-            'mail_uid' => $details['uid']
+            'sms_uuid' => $details['uuid']
         ]);
     }
 }
