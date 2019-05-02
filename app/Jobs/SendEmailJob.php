@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\EmailLog;
 use App\Models\EmailSetting;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -49,6 +50,7 @@ class SendEmailJob implements ShouldQueue
         /**
          * GetConfigs Based on the details
          */
+        $email = EmailLog::where('uuid', $this->details['uuid'])->first();
 
         $job_config = EmailSetting::whereAppId($this->details['app_id'])->first();
         if (!$job_config) {
@@ -56,6 +58,12 @@ class SendEmailJob implements ShouldQueue
                 "The app doesn't have any settings configured"
             );
             $this->fail($no_config_set);
+
+            $email->status = 'failed';
+            $email->data = json_encode([
+                'message' => $no_config_set->getMessage()
+            ]);
+            $email->save();
             throw $no_config_set;
         }
         $config = [
@@ -69,42 +77,68 @@ class SendEmailJob implements ShouldQueue
             'encryption' => $job_config->encryption,
             'username' => $job_config->username,
             'password' => $job_config->password,
-            'sendmail' => '/usr/sbin/sendmail -bs',
             'pretend' => false,
         ];
+        if ($job_config->driver == "sendmail") {
+            $config['sendmail'] = '/usr/sbin/sendmail -bs';
+        }
         Config::set('mail', $config);
 
         if (!empty($job_config->subject_prefix)) {
             $this->details['subject'] = "[" . $job_config->subject_prefix . "] " . $this->details['subject'];
         }
-        Mail::send([], [], function (Message $message) {
-            $message->to($this->details['to']);
-            $message->cc($this->details['cc']);
-            $message->bcc($this->details['bcc']);
-            $message->subject($this->details['subject']);
+        try {
+            Mail::send([], [], function (Message $message) {
+                $message->to($this->details['to']);
+                $message->cc($this->details['cc']);
+                $message->bcc($this->details['bcc']);
+                $message->subject($this->details['subject']);
 
-            foreach ($this->details['embedded'] as $embedded) {
-                $newCID = $message->embedData(
-                    base64_decode($embedded["b64"]),
-                    $embedded["name"] . "." . $embedded["format"],
-                    'image/' . $embedded["format"]
-                );
-                $this->details['body'] = str_replace(
-                    "cid:" . $embedded["name"],
-                    $newCID,
-                    $this->details['body']
-                );
-            }
-            $message->addPart($this->details['body'], "text/html", "utf-8");
-            $message->addpart($this->details['alt_body'], "text/plain", "utf-8");
+                foreach ($this->details['embedded'] as $embedded) {
+                    $newCID = $message->embedData(
+                        base64_decode($embedded["b64"]),
+                        $embedded["name"] . "." . $embedded["format"],
+                        'image/' . $embedded["format"]
+                    );
+                    $this->details['body'] = str_replace(
+                        "cid:" . $embedded["name"],
+                        $newCID,
+                        $this->details['body']
+                    );
+                }
+                $message->addPart($this->details['body'], "text/html", "utf-8");
+                $message->addpart($this->details['alt_body'], "text/plain", "utf-8");
 
-            foreach ($this->details['attachments'] as $attachment) {
-                $message->attachData(
-                    base64_decode($attachment["b64"]),
-                    $attachment["name"] . "." . $attachment["format"]
-                );
-            }
+                foreach ($this->details['attachments'] as $attachment) {
+                    $message->attachData(
+                        base64_decode($attachment["b64"]),
+                        $attachment["name"] . "." . $attachment["format"]
+                    );
+                }
 
-        });
+            });
+        } catch (Exception $email_not_sent) {
+            $email->status = 'failed';
+            $email->data = json_encode([
+                'message' => $email_not_sent->getMessage()
+            ]);
+            $email->save();
+            $this->fail($email_not_sent);
+            throw $email_not_sent;
+        }
+        $fails = Mail::failures();
+        if (count($fails) > 0) {
+            $email->status = 'failed';
+            $email->data = json_encode([
+                'failures' => $fails
+            ]);
+            $email->save();
+            $fail_exeption = new Exception("Some recipients couldn't receive the message");
+            $this->fail($fail_exeption);
+            throw $fail_exeption;
+        }
+        $email->status = 'sent';
+        $email->data = json_encode([]);
+        $email->save();
     }
 }

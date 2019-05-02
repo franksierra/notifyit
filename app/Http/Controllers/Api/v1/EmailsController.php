@@ -4,7 +4,10 @@ namespace App\Http\Controllers\api\v1;
 
 use App\Jobs\SendEmailJob;
 use App\Http\Controllers\Controller;
+use App\Models\EmailLog;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Jobs\Job;
+use Str;
 
 class EmailsController extends Controller
 {
@@ -54,7 +57,7 @@ class EmailsController extends Controller
         $details = [
             'app_id' => $request->request_log->app_id,
 
-            'uid' => uniqid("mail_"),
+            'uuid' => Str::uuid(),
             'name' => $request->get('name'),
             'from' => $request->get('from'),
             'reply_to' => $request->get('reply_to', $request->get('from')),
@@ -70,11 +73,14 @@ class EmailsController extends Controller
             'attachments' => $request->get('attachments'),
 
         ];
-
-//        dispatch(new SendEmailJob($details));
-        dispatch_now(new SendEmailJob($details));
+        EmailLog::create([
+            'uuid' => $details['uuid'],
+            'status' => 'queued',
+            'data' => json_encode([])
+        ]);
+        dispatch(new SendEmailJob($details));
         return response()->json([
-            'mail_uid' => $details['uid']
+            'mail_uuid' => $details['uuid']
         ]);
     }
 }
