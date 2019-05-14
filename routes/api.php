@@ -20,8 +20,8 @@ Route::prefix('v1')->namespace('v1')->middleware('api.authorization')->group(fun
     Route::prefix('sms')->group(function () {
         Route::post('', 'SMSController@queue')->name('api.v1.sms.queue');
     });
-    Route::prefix('notifications')->group(function () {
-        Route::post('', 'PushController@queue')->name('api.v1.notifications.queue');
+    Route::prefix('push')->group(function () {
+        Route::post('', 'PushController@queue')->name('api.v1.push.queue');
     });
 });
 

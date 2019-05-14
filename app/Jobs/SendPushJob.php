@@ -2,7 +2,12 @@
 
 namespace App\Jobs;
 
+use App\Models\PushDevice;
+use App\Models\PushLog;
+use App\Models\PushSetting;
 use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -38,40 +43,80 @@ class SendPushJob implements ShouldQueue
      *
      * @return void
      * @throws Exception
+     * @throws GuzzleException
      */
     public function handle()
     {
         /**
          * GetConfigs Based on the details
          */
+        $push = PushLog::where('uuid', $this->details['uuid'])->first();
+
         $job_config = PushSetting::whereAppId($this->details['app_id'])->first();
         if (!$job_config) {
             $no_config_set = new Exception(
                 "The app doesn't have any settings configured"
             );
             $this->fail($no_config_set);
+
+            $push->status = 'failed';
+            $push->data = json_encode([
+                'message' => $no_config_set->getMessage()
+            ]);
+            $push->save();
+
             throw $no_config_set;
         }
         $config = [
-            'driver' => $job_config->driver,
-            'host' => $job_config->host,
-            'port' => $job_config->port,
-            'from' => [
-                'address' => $this->details['from'],
-                'name' => $this->details['name']
-            ],
-            'encryption' => $job_config->encryption,
-            'username' => $job_config->username,
-            'password' => $job_config->password,
-            'sendmail' => '/usr/sbin/sendmail -bs',
-            'pretend' => false,
+            'endpoint' => $job_config->endpoint,
+            'api_key' => $job_config->api_key,
         ];
-        Config::set('push', $config);
+        foreach ($this->details['to'] as $to) {
+            $device = PushDevice::whereUid($to)->whereAppId($this->details['app_id'])->first();
+            if ($device) {
+                $registration_ids[] = $device->regid;
+            }
+        }
 
-        $client = new \GuzzleHttp\Client();
-        $res = $client->request('GET', 'https://api.github.com/user', [
-            'auth' => ['user', 'pass']
+        if (count($this->details['to']) == 1) {
+            $payload = array(
+                "to" => $registration_ids[0],
+                "data" => $this->details['data'],
+                "notification" => $this->details['notification']
+            );
+        } else {
+            $payload = array(
+                "registration_ids" => $registration_ids,
+                "data" => $this->details['data'],
+                "notification" => $this->details['notification']
+            );
+            $payload['registration_ids'] = array_unique($payload['registration_ids']);
+        }
+
+        try {
+            $client = new Client();
+            $response = $client->request('POST',$config['endpoint'], [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Authorization' => 'key=' . $config['api_key']
+                ],
+                'body' => json_encode($payload),
+            ]);
+        } catch (GuzzleException $push_not_sent) {
+            $push->status = 'failed';
+            $push->data = json_encode([
+                'message' => $push_not_sent->getMessage()
+            ]);
+            $push->save();
+            $this->fail($push_not_sent);
+            throw $push_not_sent;
+        }
+
+        $push->status = 'sent';
+        $push->data = json_encode([
+            'send' => $payload,
+            'fcm' => json_decode($response)
         ]);
-
+        $push->save();
     }
 }
