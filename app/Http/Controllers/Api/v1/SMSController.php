@@ -37,7 +37,7 @@ class SMSController extends Controller
             'status' => 'queued',
             'data' => json_encode([])
         ]);
-        dispatch(new SendSMSJob($details));
+        dispatch_now(new SendSMSJob($details));
         return response()->json([
             'sms_uuid' => $details['uuid']
         ]);

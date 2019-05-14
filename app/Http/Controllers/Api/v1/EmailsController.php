@@ -78,7 +78,7 @@ class EmailsController extends Controller
             'status' => 'queued',
             'data' => json_encode([])
         ]);
-        dispatch(new SendEmailJob($details));
+        dispatch_now(new SendEmailJob($details));
         return response()->json([
             'mail_uuid' => $details['uuid']
         ]);
