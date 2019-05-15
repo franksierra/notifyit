@@ -44,6 +44,12 @@ class PushController extends Controller
             'notification' => $request->get('notification'),
             'uuid' => Support\Str::uuid()
         ];
+        (new PushLog)->create([
+            'app_id' => $details['app_id'],
+            'uuid' => $details['uuid'],
+            'status' => 'queued',
+            'data' => json_encode([])
+        ]);
 
         PushLog::create([
             'uuid' => $details['uuid'],

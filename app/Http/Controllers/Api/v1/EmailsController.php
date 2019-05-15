@@ -73,7 +73,8 @@ class EmailsController extends Controller
             'attachments' => $request->get('attachments'),
 
         ];
-        EmailLog::create([
+        (new EmailLog)->create([
+            'app_id' => $details['app_id'],
             'uuid' => $details['uuid'],
             'status' => 'queued',
             'data' => json_encode([])

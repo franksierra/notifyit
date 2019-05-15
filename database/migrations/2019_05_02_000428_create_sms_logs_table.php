@@ -15,10 +15,13 @@ class CreateSMSLogsTable extends Migration
     {
         Schema::create('sms_logs', function (Blueprint $table) {
             $table->bigIncrements('id');
+            $table->unsignedBigInteger('app_id');
             $table->uuid('uuid')->index();
             $table->enum('status', ['queued', 'sent', 'failed']);
             $table->json('data')->nullable();
             $table->timestamps();
+
+            $table->foreign('app_id')->references('id')->on('apps');
         });
     }
 

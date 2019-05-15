@@ -32,7 +32,8 @@ class SMSController extends Controller
             'text' => $request->get('text')
         ];
 
-        SmsLog::create([
+        (new SmsLog)->create([
+            'app_id' => $details['app_id'],
             'uuid' => $details['uuid'],
             'status' => 'queued',
             'data' => json_encode([])
