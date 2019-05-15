@@ -17,7 +17,7 @@ class CreatePushDevices extends Migration
             $table->bigIncrements('id');
             $table->unsignedBigInteger('app_id');
             $table->enum("platform", ['android', 'ios', 'web', 'other']);
-            $table->string('uid', 255)->index();
+            $table->string('uuid', 255)->index();
             $table->string('identity', 255);
             $table->string('regid', 255);
             $table->timestamps();

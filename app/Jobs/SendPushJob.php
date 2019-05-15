@@ -72,7 +72,7 @@ class SendPushJob implements ShouldQueue
             'api_key' => $job_config->api_key,
         ];
         foreach ($this->details['to'] as $to) {
-            $device = PushDevice::whereUid($to)->whereAppId($this->details['app_id'])->first();
+            $device = PushDevice::whereUuid($to)->whereAppId($this->details['app_id'])->first();
             if ($device) {
                 $registration_ids[] = $device->regid;
             }
