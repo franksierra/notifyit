@@ -6,12 +6,32 @@ use App\Jobs\SendEmailJob;
 use App\Http\Controllers\Controller;
 use App\Models\EmailLog;
 use Illuminate\Http\Request;
-use Illuminate\Queue\Jobs\Job;
-use Str;
+use Illuminate\Support\Str;
 
 class EmailsController extends Controller
 {
-    public function queue(Request $request)
+    public function status($uuid, Request $request)
+    {
+        $app_id = $request->request_log->app_id;
+        $email = EmailLog::whereAppId($app_id)->whereUuid($uuid)->first();
+        if ($email) {
+            return response()->json([
+                'mail_uuid' => $uuid,
+                'status' => $email->status,
+                'data' => json_decode($email->data)
+            ]);
+        } else {
+            return response()->json(
+                [
+                    'status' => 'missing',
+                    'mail_uuid' => $uuid
+                ],
+                404
+            );
+        }
+    }
+
+    private function proccess(Request $request)
     {
         $this->validate($request, [
             'name' => 'required|max:255',
@@ -79,9 +99,28 @@ class EmailsController extends Controller
             'status' => 'queued',
             'data' => json_encode([])
         ]);
-        dispatch_now(new SendEmailJob($details));
+        return $details;
+    }
+
+    public function queue(Request $request)
+    {
+        $details = $this->proccess($request);
+        dispatch(new SendEmailJob($details));
         return response()->json([
-            'mail_uuid' => $details['uuid']
+            'mail_uuid' => $details['uuid'],
+            'status' => 'queued',
+            'data' => json_encode([])
+        ]);
+    }
+
+    public function now(Request $request)
+    {
+        $details = $this->proccess($request);
+        $dispatch = dispatch_now(new SendEmailJob($details));
+        return response()->json([
+            'mail_uuid' => $details['uuid'],
+            'status' => $dispatch['status'],
+            'data' => json_decode($dispatch['data'])
         ]);
     }
 }
