@@ -6,11 +6,32 @@ use App\Jobs\SendSMSJob;
 use App\Models\SmsLog;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Str;
+use Illuminate\Support\Str;
 
 class SMSController extends Controller
 {
-    public function queue(Request $request)
+    public function status($uuid, Request $request)
+    {
+        $app_id = $request->request_log->app_id;
+        $sms = SmsLog::whereAppId($app_id)->whereUuid($uuid)->first();
+        if ($sms) {
+            return response()->json([
+                'sms_uuid' => $uuid,
+                'status' => $sms->status,
+                'data' => json_decode($sms->data)
+            ]);
+        } else {
+            return response()->json(
+                [
+                    'status' => 'missing',
+                    'sms_uuid' => $uuid
+                ],
+                404
+            );
+        }
+    }
+
+    private function proccess(Request $request)
     {
         $this->validate($request, [
             'country' => 'required|max:2',
@@ -38,9 +59,29 @@ class SMSController extends Controller
             'status' => 'queued',
             'data' => json_encode([])
         ]);
-        dispatch_now(new SendSMSJob($details));
+
+        return $details;
+    }
+
+    public function queue(Request $request)
+    {
+        $details = $this->proccess($request);
+        dispatch(new SendSMSJob($details));
         return response()->json([
-            'sms_uuid' => $details['uuid']
+            'sms_uuid' => $details['uuid'],
+            'status' => 'queued',
+            'data' => json_encode([])
+        ]);
+    }
+
+    public function now(Request $request)
+    {
+        $details = $this->proccess($request);
+        $dispatch = dispatch_now(new SendSMSJob($details));
+        return response()->json([
+            'sms_uuid' => $details['uuid'],
+            'status' => $dispatch['status'],
+            'data' => json_decode($dispatch['data'])
         ]);
     }
 }
