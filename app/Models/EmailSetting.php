@@ -10,11 +10,11 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property int $app_id
  * @property string $driver
- * @property string $host
- * @property int $port
- * @property string $encryption
- * @property string $username
- * @property string $password
+ * @property string|null $host
+ * @property int|null $port
+ * @property string|null $encryption
+ * @property string|null $username
+ * @property string|null $password
  * @property string $mail_type
  * @property string $subject_prefix
  * @property \Illuminate\Support\Carbon|null $created_at

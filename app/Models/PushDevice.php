@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property int $app_id
  * @property string $platform
- * @property string $uid
+ * @property string $uuid
  * @property string $identity
  * @property string $regid
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -24,11 +24,11 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\PushDevice whereIdentity($value)
  * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\PushDevice wherePlatform($value)
  * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\PushDevice whereRegid($value)
- * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\PushDevice whereUid($value)
  * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\PushDevice whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|\App\Models\PushDevice whereUuid($value)
  * @mixin \Eloquent
  */
 class PushDevice extends Model
 {
-    //
+    protected $fillable = ['app_id', 'platform', 'uid', 'identity', 'regid'];
 }
