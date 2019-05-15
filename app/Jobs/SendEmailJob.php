@@ -42,7 +42,7 @@ class SendEmailJob implements ShouldQueue
     /**
      * Execute the job.
      *
-     * @return void
+     * @return array
      * @throws Exception
      */
     public function handle()
@@ -140,5 +140,9 @@ class SendEmailJob implements ShouldQueue
         $email->status = 'sent';
         $email->data = json_encode([]);
         $email->save();
+        return [
+            'status' => $email->status,
+            'data' => $email->data
+        ];
     }
 }
