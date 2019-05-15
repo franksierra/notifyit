@@ -41,8 +41,7 @@ class SendPushJob implements ShouldQueue
     /**
      * Execute the job.
      *
-     * @return void
-     * @throws Exception
+     * @return array
      * @throws GuzzleException
      */
     public function handle()
@@ -79,23 +78,22 @@ class SendPushJob implements ShouldQueue
         }
 
         if (count($this->details['to']) == 1) {
-            $payload = array(
+            $payload = [
                 "to" => $registration_ids[0],
                 "data" => $this->details['data'],
                 "notification" => $this->details['notification']
-            );
+            ];
         } else {
-            $payload = array(
+            $payload = [
                 "registration_ids" => $registration_ids,
                 "data" => $this->details['data'],
                 "notification" => $this->details['notification']
-            );
+            ];
             $payload['registration_ids'] = array_unique($payload['registration_ids']);
         }
-
         try {
             $client = new Client();
-            $response = $client->request('POST',$config['endpoint'], [
+            $response = $client->request('POST', $config['endpoint'], [
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Authorization' => 'key=' . $config['api_key']
@@ -111,12 +109,19 @@ class SendPushJob implements ShouldQueue
             $this->fail($push_not_sent);
             throw $push_not_sent;
         }
-
-        $push->status = 'sent';
+        if ($response->getStatusCode() == 200) {
+            $push->status = 'sent';
+        } else {
+            $push->status = 'failed';
+        }
         $push->data = json_encode([
-            'send' => $payload,
-            'fcm' => json_decode($response)
+            'sent' => $payload,
+            'fcm' => json_decode($response->getBody()->getContents())
         ]);
         $push->save();
+        return [
+            'status' => $push->status,
+            'data' => $push->data
+        ];
     }
 }
