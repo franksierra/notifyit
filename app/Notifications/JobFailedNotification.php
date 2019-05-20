@@ -46,7 +46,7 @@ class JobFailedNotification extends Notification
 
         return (new SlackMessage)
             ->from('Notificaciones')
-            ->to(env('HORIZON_SLACK_URL'))
+            ->to(env('HORIZON_SLACK_CHANNEL'))
             ->error()
             ->content('Queued job failed: ' . $this->event['job'])
             ->attachment(function ($attachment) {
