@@ -76,7 +76,7 @@ return [
 
     'middleware' => [
         'web',
-        Authorize::class,
+        env('TELESCOPE_ENABLED_PRODUCTION', FALSE) ? Authorize::class : 'web',
     ],
 
     /*
