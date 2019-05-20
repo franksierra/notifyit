@@ -18,18 +18,14 @@ class SendSMSJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * The number of times the job may be attempted.
-     *
-     * @var int
-     */
-    public $tries = 1;
     protected $details;
+    public $tries = 1;
+    public $queue = 'sms';
 
     /**
      * Create a new job instance.
      *
-     * @return void
+     * @param $details
      */
     public function __construct($details)
     {

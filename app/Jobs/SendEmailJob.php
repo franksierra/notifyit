@@ -20,13 +20,8 @@ class SendEmailJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $details;
-
-    /**
-     * The number of times the job may be attempted.
-     *
-     * @var int
-     */
     public $tries = 1;
+    public $queue = 'emails';
 
     /**
      * Create a new job instance.
@@ -38,7 +33,6 @@ class SendEmailJob implements ShouldQueue
         $this->details = $details;
     }
 
-
     /**
      * Execute the job.
      *
@@ -47,6 +41,7 @@ class SendEmailJob implements ShouldQueue
      */
     public function handle()
     {
+
         /**
          * GetConfigs Based on the details
          */
