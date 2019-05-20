@@ -142,7 +142,7 @@ return [
         'production' => [
             'supervisor-1' => [
                 'connection' => 'redis',
-                'queue' => ['emails', 'push', 'sms'],
+                'queue' => ['mails', 'push', 'sms'],
                 'balance' => 'simple',
                 'processes' => 10,
                 'tries' => 3,
@@ -152,7 +152,7 @@ return [
         'local' => [
             'supervisor-1' => [
                 'connection' => 'redis',
-                'queue' => ['emails', 'push', 'sms'],
+                'queue' => ['mails', 'push', 'sms'],
                 'balance' => 'simple',
                 'processes' => 3,
                 'tries' => 3,
