@@ -48,7 +48,7 @@ class DatabaseSeeder extends Seeder
         $push_device = PushDevice::create([
             'app_id' => $app->id,
             'platform' => 'android',
-            'uid' => 'UID:' . Str::random(36),
+            'uuid' => 'UID:' . Str::random(36),
             'identity' => Str::random(15),
             'regid' => Str::random(128)
         ]);
