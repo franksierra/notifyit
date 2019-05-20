@@ -21,7 +21,6 @@ class SendPushJob implements ShouldQueue
 
     protected $details;
     public $tries = 1;
-    public $queue = 'push';
 
     /**
      * Create a new job instance.
@@ -31,6 +30,7 @@ class SendPushJob implements ShouldQueue
     public function __construct($details)
     {
         $this->details = $details;
+        self::onQueue('push');
     }
 
     /**
