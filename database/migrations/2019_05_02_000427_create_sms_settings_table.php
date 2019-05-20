@@ -16,6 +16,7 @@ class CreateSmsSettingsTable extends Migration
         Schema::create('sms_settings', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('app_id');
+            $table->string('country',3);
             $table->string('endpoint', 255);
             $table->enum('type', ['REST', 'SOAP'])->default('REST');
             $table->json('payload');

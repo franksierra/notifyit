@@ -54,7 +54,7 @@ class SendPushJob implements ShouldQueue
         $job_config = PushSetting::whereAppId($this->details['app_id'])->first();
         if (!$job_config) {
             $no_config_set = new Exception(
-                "The app doesn't have any settings configured"
+                "The app doesn't have any settings configured to send Push Notifications"
             );
             $this->fail($no_config_set);
 
