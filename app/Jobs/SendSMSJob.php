@@ -20,6 +20,7 @@ class SendSMSJob implements ShouldQueue
 
     protected $details;
     public $tries = 1;
+    public $uuid = null;
 
     /**
      * Create a new job instance.
@@ -29,6 +30,7 @@ class SendSMSJob implements ShouldQueue
     public function __construct($details)
     {
         $this->details = $details;
+        $this->uuid = $this->details['uuid'];
         self::onQueue('sms');
     }
 
@@ -40,7 +42,7 @@ class SendSMSJob implements ShouldQueue
      */
     public function handle()
     {
-        $sms = SmsLog::where('uuid', $this->details['uuid'])->first();
+        $sms = SmsLog::where('uuid', $this->uuid)->first();
         /**
          * GetConfigs Based on the details
          */

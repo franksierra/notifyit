@@ -21,6 +21,7 @@ class SendEmailJob implements ShouldQueue
 
     protected $details;
     public $tries = 1;
+    public $uuid = null;
 
     /**
      * Create a new job instance.
@@ -30,6 +31,7 @@ class SendEmailJob implements ShouldQueue
     public function __construct($details)
     {
         $this->details = $details;
+        $this->uuid = $this->details['uuid'];
         self::onQueue('emails');
     }
 
@@ -45,7 +47,7 @@ class SendEmailJob implements ShouldQueue
         /**
          * GetConfigs Based on the details
          */
-        $email = EmailLog::where('uuid', $this->details['uuid'])->first();
+        $email = EmailLog::where('uuid', $this->uuid)->first();
 
         $job_config = EmailSetting::whereAppId($this->details['app_id'])->first();
         if (!$job_config) {

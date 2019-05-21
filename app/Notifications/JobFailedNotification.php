@@ -2,62 +2,45 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\SlackMessage;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Notifications\Messages\SlackAttachment;
+use Spatie\FailedJobMonitor\Notification;
 
 class JobFailedNotification extends Notification
 {
-    use Queueable;
 
-    private $event;
-
-    /**
-     * Create a new notification instance.
-     *
-     * @return void
-     */
-    public function __construct($event)
+    public function toMail($notifiable): MailMessage
     {
-        $this->event = $event;
-    }
-
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @param mixed $notifiable
-     * @return array
-     */
-    public function via($notifiable)
-    {
-        return ['slack'];
-    }
-
-    /**
-     * Get the Slack representation of the notification.
-     *
-     * @param mixed $notifiable
-     * @return \Illuminate\Notifications\Messages\SlackMessage
-     */
-    public function toSlack($notifiable)
-    {
-        Log::info('Sent slack notification for order #' . $this->event['id'] . ' for ' . $this->event['name']);
-
-        return (new SlackMessage)
-            ->from('Notificaciones')
-            ->to(env('HORIZON_SLACK_CHANNEL'))
+        return (new MailMessage)
             ->error()
-            ->content('Queued job failed: ' . $this->event['job'])
-            ->attachment(function ($attachment) {
-                $attachment->title($this->event['exception']['message'])
+            ->subject('A job failed at ' . config('app.url'))
+            ->line("Exception message: {$this->event->exception->getMessage()}")
+            ->line("Job class: {$this->event->job->resolveName()}")
+            ->line("Job body: {$this->event->job->getRawBody()}")
+            ->line("Exception: {$this->event->exception->getTraceAsString()}");
+    }
+
+    public function toSlack(): SlackMessage
+    {
+        $job = $this->event->job->payload();
+        $job_dec = unserialize($job["data"]["command"]);
+        return (new SlackMessage)
+            ->from(env('FAILED_JOB_SLACK_USER'))
+            ->to(env('FAILED_JOB_SLACK_CHANNEL'))
+            ->error()
+            ->content('Queued job failed: ' . $this->event->job->resolveName())
+            ->attachment(function ($attachment) use ($job, $job_dec) {
+                $attachment
+                    ->title($this->event->exception->getMessage())
                     ->fields([
-                        'ID' => $this->event['id'],
-                        'Name' => $this->event['name'],
-                        'File' => $this->event['exception']['file'],
-                        'Line' => $this->event['exception']['line'],
+                        'ID' => $job_dec->uuid,
+                        'Name' => $job["data"]["commandName"],
+                        'File' => $this->event->exception->getFile(),
+                        'Line' => $this->event->exception->getLine(),
                         'Server' => env('APP_ENV'),
-                        'Queue' => $this->event['queue'],
+                        'Queue' => $this->event->job->getQueue(),
+                        'Telescope' => $job["telescope_uuid"],
                     ]);
             });
     }
