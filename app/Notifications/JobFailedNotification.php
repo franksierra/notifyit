@@ -40,7 +40,7 @@ class JobFailedNotification extends Notification
                         'Line' => $this->event->exception->getLine(),
                         'Server' => env('APP_ENV'),
                         'Queue' => $this->event->job->getQueue(),
-                        'Telescope' => $job["telescope_uuid"],
+                        'Telescope' => env('APP_URL') . "/telescope/jobs/" . $job["telescope_uuid"],
                     ]);
             });
     }
