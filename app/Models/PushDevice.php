@@ -30,5 +30,5 @@ use Illuminate\Database\Eloquent\Model;
  */
 class PushDevice extends Model
 {
-    protected $fillable = ['app_id', 'platform', 'uid', 'identity', 'regid'];
+    protected $fillable = ['app_id', 'platform', 'uuid', 'identity', 'regid'];
 }
