@@ -50,7 +50,7 @@ class PushController extends Controller
                 'to.*' => [
                     'string',
                     'distinct',
-                    Rule::exists('push_devices', 'uid')
+                    Rule::exists('push_devices', 'uuid')
                         ->where('app_id', $request->request_log->app_id)
                 ]
             ],
@@ -108,7 +108,7 @@ class PushController extends Controller
         $uuid = "UID:" . sha1($app_id . $platform . $identity);
         $regid = $request->get('regid');
 
-        if (!PushDevice::whereUid($uuid)->exists()) {
+        if (!PushDevice::whereUuid($uuid)->exists()) {
             $device = new PushDevice([
                 'app_id' => $app_id,
                 'platform' => $platform,
@@ -123,7 +123,7 @@ class PushController extends Controller
 
         }
 
-        $device = PushDevice::whereUid($uuid)->first();
+        $device = PushDevice::whereUuid($uuid)->first();
         if ($device->regid == $regid) {
             return response()->json([
                 'device_uuid' => $device->uuid
