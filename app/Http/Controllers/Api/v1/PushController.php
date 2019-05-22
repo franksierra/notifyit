@@ -38,16 +38,13 @@ class PushController extends Controller
     {
         $this->validate($request, [
             'to' => 'required|string',
-            'data' => 'required|json',
-            'notification' => 'nullable|json'
+            'payload' => 'required|json'
         ]);
         $json_request = $request->all();
         $json_request["to"] = json_decode($json_request["to"] ?? "[]");
-        $json_request["data"] = json_decode($json_request["data"] ?? "[]");
-        $json_request["notification"] = json_decode($json_request["notification"] ?? $request->get("data"));
+        $json_request["payload"] = json_decode($json_request["payload"] ?? "[]");
         $request->merge($json_request);
-        $this->validate(
-            $request,
+        $this->validate($request,
             [
                 'to' => 'present|array',
                 'to.*' => [
@@ -64,8 +61,7 @@ class PushController extends Controller
         $details = [
             'app_id' => $request->request_log->app_id,
             'to' => $request->get('to'),
-            'data' => $request->get('data'),
-            'notification' => $request->get('notification'),
+            'payload' => $request->get('payload'),
             'uuid' => Support\Str::uuid()
         ];
         (new PushLog)->create([

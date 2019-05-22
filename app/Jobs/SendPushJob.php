@@ -73,20 +73,11 @@ class SendPushJob implements ShouldQueue
                 $registration_ids[] = $device->regid;
             }
         }
-
+        $payload = $this->details['payload'];
         if (count($this->details['to']) == 1) {
-            $payload = [
-                "to" => $registration_ids[0],
-                "data" => $this->details['data'],
-                "notification" => $this->details['notification']
-            ];
+            $payload["to"] = $registration_ids[0];
         } else {
-            $payload = [
-                "registration_ids" => $registration_ids,
-                "data" => $this->details['data'],
-                "notification" => $this->details['notification']
-            ];
-            $payload['registration_ids'] = array_unique($payload['registration_ids']);
+            $payload['registration_ids'] = array_unique($registration_ids);
         }
         try {
             $client = new Client();
