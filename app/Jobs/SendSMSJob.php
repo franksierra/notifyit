@@ -5,6 +5,8 @@ namespace App\Jobs;
 use App\Models\SmsLog;
 use App\Models\SmsSetting;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Config;
 use Exception;
 use Illuminate\Bus\Queueable;
@@ -38,7 +40,7 @@ class SendSMSJob implements ShouldQueue
      * Execute the job.
      *
      * @return array
-     * @throws Exception
+     * @throws GuzzleException
      */
     public function handle()
     {
@@ -68,59 +70,38 @@ class SendSMSJob implements ShouldQueue
         ];
         Config::set('sms', $config);
         $response = null;
-        $enviarSMS = [];
-        try {
-            $now = Carbon::now();
-            $payload = json_decode($job_config->payload);
-            $clsEmisor = [
-                'emServicio' => $payload->emServicio,
-                'emEmisor' => $payload->emEmisor,
-                'emLogin' => $payload->emLogin,
-                'emPwd' => $payload->emPwd,
-                'emReferencia' => $sms->id,
-                'emFechaEnv' => $now->format('m/d/Y'),
-                'emHoraEnv' => $now->format('H:i'),
-                'emNombrePC' => $payload->emNombrePC,
-                'emKey' => '',
-                'emLimite' => $payload->emLimite,
-                'emTotalMes' => $payload->emTotalMes
+        $status_array = [];
+        $sms->status = 'sent';
+        foreach ($this->details["to"] as $to) {
+            $payload = [
+                'to' => $to,
+                'text' => $this->details["text"]
             ];
-            $servicio = $clsEmisor['emServicio'];
-            $emisor = $clsEmisor['emEmisor'];
-            $login = $clsEmisor['emLogin'];
-            $pwd = $clsEmisor['emPwd'];
-            $referencia = $clsEmisor['emReferencia'];
-            $clsEmisor['emKey'] = md5("$servicio;csms@auto;$emisor;$login;$pwd;$referencia");
-            $enviarSMS = [
-                'parEmisor' => $clsEmisor,
-                'parDestinatarios' => $this->details["to"][0],
-                'parMensaje' => $this->details["text"]
-            ];
-
-            $options = [
-                'trace' => true,
-                'cache_wsdl' => WSDL_CACHE_NONE
-            ];
-            $client = new SoapClient($config['endpoint'], $options); // null for non-wsdl mode
-            $response = $client->EnviarSMS($enviarSMS);
-        } catch (Exception $sms_not_sent) {
-            $sms->status = 'failed';
-            $sms->data = json_encode([
-                'message' => $sms_not_sent->getMessage()
-            ]);
-            $sms->save();
-            $this->fail($sms_not_sent);
-            throw $sms_not_sent;
+            try {
+                $client = new Client();
+                $response = $client->request('POST', $config['endpoint'], [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                    ],
+                    'body' => json_encode($payload),
+                ]);
+            } catch (GuzzleException $sms_not_sent) {
+                $sms->status = 'failed';
+                $sms->data = json_encode([
+                    'message' => $sms_not_sent->getMessage()
+                ]);
+                $sms->save();
+                $this->fail($sms_not_sent);
+                throw $sms_not_sent;
+            }
+            if ($response->getStatusCode() == 200) {
+                $status_array[$to] = 'sent';
+            } else {
+                $status_array[$to] = 'fail';
+                $sms->status = 'fail';
+            }
         }
-        if ($response->EnviarSMSResult->reNumErrores == 0) {
-            $sms->status = 'sent';
-        } else {
-            $sms->status = 'failed';
-        }
-        $sms->data = json_encode([
-            'sent' => $enviarSMS,
-            'fcm' => json_decode($response)
-        ]);
+        $sms->data = json_encode($status_array);
         $sms->save();
 
         return [
