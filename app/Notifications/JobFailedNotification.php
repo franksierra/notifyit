@@ -29,7 +29,7 @@ class JobFailedNotification extends Notification
             ->from(env('FAILED_JOB_SLACK_USER'))
             ->to(env('FAILED_JOB_SLACK_CHANNEL'))
             ->error()
-            ->content('Queued job failed: ' . $this->event->job->resolveName())
+            ->content('@all Queued job failed: ' . $this->event->job->resolveName())
             ->attachment(function ($attachment) use ($job, $job_dec) {
                 $attachment
                     ->title($this->event->exception->getMessage())
