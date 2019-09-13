@@ -79,7 +79,7 @@ class SendPushJob implements ShouldQueue
             $payload->to = $registration_ids[0];
         } else {
             $payload->registration_ids = new \stdClass();
-            $payload->registration_ids = array_unique($registration_ids);
+            $payload->registration_ids = array_values(array_unique($registration_ids));
         }
         try {
             $client = new Client();
