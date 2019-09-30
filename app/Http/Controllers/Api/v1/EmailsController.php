@@ -60,9 +60,9 @@ class EmailsController extends Controller
         $request->merge($json_request);
         $this->validate($request, [
             'mails' => 'required|array|min:1',
-            'to.*' => 'email|distinct',
-            'cc.*' => 'email|distinct',
-            'bcc.*' => 'email|distinct',
+            'to.*' => 'email',
+            'cc.*' => 'email',
+            'bcc.*' => 'email',
 
             'embedded' => 'present|array',
             'embedded.*.name' => 'required|string|distinct',
