@@ -75,10 +75,8 @@ class SendPushJob implements ShouldQueue
         }
         $payload = $this->details['payload'];
         if (count($this->details['to']) == 1) {
-            $payload->to = new \stdClass();
             $payload->to = $registration_ids[0];
         } else {
-            $payload->registration_ids = new \stdClass();
             $payload->registration_ids = array_values(array_unique($registration_ids));
         }
         try {
