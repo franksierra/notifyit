@@ -5,15 +5,14 @@ namespace App\Jobs;
 use App\Models\PushDevice;
 use App\Models\PushLog;
 use App\Models\PushSetting;
+use App\Services\FcmService;
 use Exception;
-use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\Config;
 
 class SendPushJob implements ShouldQueue
 {
@@ -67,27 +66,27 @@ class SendPushJob implements ShouldQueue
             'endpoint' => $job_config->endpoint,
             'api_key' => $job_config->api_key,
         ];
+        $registration_ids = [];
         foreach ($this->details['to'] as $to) {
             $device = PushDevice::whereUuid($to)->whereAppId($this->details['app_id'])->first();
             if ($device) {
                 $registration_ids[] = $device->regid;
             }
         }
+        $registration_ids[] = array_values(array_unique($registration_ids));
         $payload = $this->details['payload'];
-        if (count($this->details['to']) == 1) {
-            $payload->to = $registration_ids[0];
-        } else {
-            $payload->registration_ids = array_values(array_unique($registration_ids));
-        }
         try {
-            $client = new Client();
-            $response = $client->request('POST', $config['endpoint'], [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Authorization' => 'key=' . $config['api_key']
-                ],
-                'body' => json_encode($payload),
-            ]);
+            $client = new FcmService();
+            if (count($this->details['to']) == 1) {
+                $payload->to = $registration_ids[0];
+                $response = $client->send($payload, $config);
+            } else {
+                $registration_ids_chunked = array_chunk($registration_ids, 1000);
+                foreach ($registration_ids_chunked as $ids) {
+                    $payload->registration_ids = $ids;
+                    $response = $client->send($payload, $config);
+                }
+            }
         } catch (GuzzleException $push_not_sent) {
             $push->status = 'failed';
             $push->data = json_encode([
@@ -96,20 +95,21 @@ class SendPushJob implements ShouldQueue
             $push->save();
             $this->fail($push_not_sent);
             throw $push_not_sent;
+        } finally {
+            if ($response->getStatusCode() == 200) {
+                $push->status = 'sent';
+            } else {
+                $push->status = 'failed';
+            }
+            $push->data = json_encode([
+                'sent' => $payload,
+                'fcm' => json_decode($response->getBody()->getContents())
+            ]);
+            $push->save();
+            return [
+                'status' => $push->status,
+                'data' => $push->data
+            ];
         }
-        if ($response->getStatusCode() == 200) {
-            $push->status = 'sent';
-        } else {
-            $push->status = 'failed';
-        }
-        $push->data = json_encode([
-            'sent' => $payload,
-            'fcm' => json_decode($response->getBody()->getContents())
-        ]);
-        $push->save();
-        return [
-            'status' => $push->status,
-            'data' => $push->data
-        ];
     }
 }

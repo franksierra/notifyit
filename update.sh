@@ -1,8 +1,5 @@
 #!/bin/bash
 
-#cd $PWD
-#cd ../../../
-
 SUCMD='sudo -u www-data '
 
 WEB_ROOT=$PWD
