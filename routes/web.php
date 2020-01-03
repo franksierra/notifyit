@@ -18,4 +18,5 @@ Auth::routes(['register' => false]);
 
 Route::get('/', 'HomeController@index');
 Route::get('/home', 'HomeController@index')->name('home');
-Route::get('/{uuid}', 'EmailsController@show')->name('email.download');
+
+Route::get('emails/{uuid}/download', 'EmailsController@download')->name('email.download');

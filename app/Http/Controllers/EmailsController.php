@@ -15,7 +15,7 @@ class EmailsController extends Controller
      * @return mixed
      * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
-    public function show($uuid)
+    public function download($uuid)
     {
         $name = 'mails/' . $uuid . '.eml';
         $file = Storage::disk('public')->get($name);
