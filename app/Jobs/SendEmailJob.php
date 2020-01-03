@@ -85,7 +85,7 @@ class SendEmailJob implements ShouldQueue
             $this->details['subject'] = "[" . $job_config->subject_prefix . "] " . $this->details['subject'];
         }
         try {
-            Mail::send([], [], function (Message $message) {
+            Mail::send([], ['uuid' => $this->uuid], function (Message $message) {
                 $message->to($this->details['to']);
                 $message->cc($this->details['cc']);
                 $message->bcc($this->details['bcc']);
