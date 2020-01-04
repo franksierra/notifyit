@@ -13,6 +13,9 @@ class ApiAuthorization
 
     const AUTH_HEADER = 'X-Authorization';
 
+    /** @var RequestLog */
+    private $requestLog;
+
     /**
      * Handle an incoming request.
      *
@@ -25,14 +28,24 @@ class ApiAuthorization
         $header = $request->header(self::AUTH_HEADER);
         $apiKey = AppKey::getByKey($header);
 
-        // Aqui voy a guardar las peticiones
+        $this->requestLog = new RequestLog([
+            'origin' => 'api',
+            'method' => $request->getMethod(),
+            'app_id' => "k_" . $header,
+            'uri' => $request->getRequestUri(),
+            'headers' => json_encode($request->headers->all()),
+            'params' => json_encode($request->request->all()),
+            'ip' => $request->getClientIp(),
+        ]);
+        $this->requestLog->save();
+
         if ($apiKey instanceof AppKey) {
-            $request_log = $this->logAccessEvent($request, $apiKey);
-            $request->request->add(['request_log' => $request_log]);
+            $this->requestLog->app_id = $apiKey->app_id;
+            $this->requestLog->save();
+            $request->request->add(['request_log' => $this->requestLog]);
             return $next($request);
         }
 
-        $this->logAccessEvent($request);
         return response([
             'errors' => [[
                 'message' => 'Unauthorized'
@@ -41,36 +54,11 @@ class ApiAuthorization
 
     }
 
-    public function terminate($request, $response)
+    public function terminate(Request $request, Response $response)
     {
-        $this->updateAccessEvent($request, $response);
-    }
-
-
-    protected function logAccessEvent(Request $request, AppKey $apiKey = null)
-    {
-        $request_log = new RequestLog([
-            'origin' => 'api',
-            'app_id' => $apiKey->app_id ?? null,
-//            'user_id' => $apiKey->app_id,
-            'method' => $request->getMethod(),
-            'uri' => $request->getRequestUri(),
-            'headers' => json_encode($request->headers->all()),
-            'params' => json_encode($request->request->all()),
-            'ip' => $request->getClientIp(),
-        ]);
-        $request_log->save();
-        return $request_log;
-
-    }
-
-    protected function updateAccessEvent(Request $request, Response $response)
-    {
-        $request_log = RequestLog::find($request->request_log->id);
-        $request_log->status_code = $response->getStatusCode();
-        $request_log->response = json_encode($response->getOriginalContent());
-        $request_log->exec_time = microtime(true) - LARAVEL_START;
-        $request_log->save();
-
+        $this->requestLog->status_code = $response->getStatusCode();
+        $this->requestLog->response = json_encode($response->getOriginalContent());
+        $this->requestLog->exec_time = microtime(true) - LARAVEL_START;
+        $this->requestLog->save();
     }
 }
