@@ -55,13 +55,16 @@ class ApiAuthorization
     }
 
     /**
+     * @param Request $request
      * @param Response|JsonResponse $response
      */
-    public function terminate($response)
+    public function terminate(Request $request, $response)
     {
-        $this->requestLog->status_code = $response->getStatusCode();
-        $this->requestLog->response = json_encode($response->getOriginalContent());
-        $this->requestLog->exec_time = microtime(true) - LARAVEL_START;
-        $this->requestLog->save();
+        /** @var RequestLog $requestLog */
+        $requestLog = RequestLog::find($request->request_log->id);
+        $requestLog->status_code = $response->getStatusCode();
+        $requestLog->response = json_encode($response->getOriginalContent());
+        $requestLog->exec_time = microtime(true) - LARAVEL_START;
+        $requestLog->save();
     }
 }
