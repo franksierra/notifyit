@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\AppKey;
 use App\Models\RequestLog;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Closure;
 
@@ -64,7 +64,7 @@ class ApiAuthorization
 
     }
 
-    protected function updateAccessEvent(Request $request, JsonResponse $response)
+    protected function updateAccessEvent(Request $request, Response $response)
     {
         $request_log = RequestLog::find($request->request_log->id);
         $request_log->status_code = $response->getStatusCode();
