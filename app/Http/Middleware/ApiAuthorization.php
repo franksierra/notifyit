@@ -31,7 +31,6 @@ class ApiAuthorization
         $this->requestLog = new RequestLog([
             'origin' => 'api',
             'method' => $request->getMethod(),
-            'app_id' => "k_" . $header,
             'uri' => $request->getRequestUri(),
             'headers' => json_encode($request->headers->all()),
             'params' => json_encode($request->request->all()),
