@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\AppKey;
 use App\Models\RequestLog;
 use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Closure;
 
@@ -23,7 +24,7 @@ class ApiAuthorization
      * @param \Closure $next
      * @return mixed
      */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
         $header = $request->header(self::AUTH_HEADER);
         $apiKey = AppKey::getByKey($header);
@@ -53,7 +54,10 @@ class ApiAuthorization
 
     }
 
-    public function terminate(Request $request, Response $response)
+    /**
+     * @param Response|JsonResponse $response
+     */
+    public function terminate($response)
     {
         $this->requestLog->status_code = $response->getStatusCode();
         $this->requestLog->response = json_encode($response->getOriginalContent());
