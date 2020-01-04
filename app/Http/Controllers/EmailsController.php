@@ -18,6 +18,11 @@ class EmailsController extends Controller
     public function download($uuid)
     {
         $name = 'mails/' . $uuid . '.eml';
+        if (!Storage::disk('public')->exists($name)) {
+
+            return abort(404,'Arhivo no encontrado o es anterior al 04 de enero del 2020');
+        }
+
         $file = Storage::disk('public')->get($name);
 
         return response($file, 200, [
