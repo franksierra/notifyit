@@ -63,6 +63,7 @@ class SendEmailJob implements ShouldQueue
             $email->save();
             throw $no_config_set;
         }
+        Config::set('mail', []);
         $config = [
             'driver' => $job_config->driver,
             'host' => $job_config->host,
