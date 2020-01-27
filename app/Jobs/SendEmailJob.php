@@ -84,6 +84,7 @@ class SendEmailJob implements ShouldQueue
         try {
             $dynamicEmail = new DynamicEmail($this->jobData);
             $dynamicEmail
+                ->from($this->jobData['from'], $this->jobData['name'])
                 ->to($this->jobData['to'])
                 ->cc($this->jobData['cc'])
                 ->bcc($this->jobData['bcc'])

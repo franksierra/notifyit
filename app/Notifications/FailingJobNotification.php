@@ -76,9 +76,9 @@ class FailingJobNotification extends Notification
                         'Name' => $job["data"]["commandName"],
                         'File' => $this->event->exception->getFile(),
                         'Line' => $this->event->exception->getLine(),
-                        'Server' => env('APP_ENV'),
+                        'Server' => Config::get('app.env'),
                         'Queue' => $this->event->job->getQueue(),
-                        'Telescope' => env('APP_URL') . "/telescope/jobs/" . ($job["telescope_uuid"] ?? "NoTelescopeInstance"),
+                        'Telescope' => Config::get('app.url') . "/telescope/jobs/" . ($job["telescope_uuid"] ?? ""),
                         'AddInfo' => $jobLog->additional ?? [],
                     ]);
             });
