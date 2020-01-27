@@ -1,10 +1,8 @@
 <?php
 
-use App\Models\User;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class CreateUsersTable extends Migration
 {
@@ -16,7 +14,7 @@ class CreateUsersTable extends Migration
     public function up()
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->bigIncrements('id');
+            $table->uuid('id')->primary();
             $table->string('name');
             $table->string('username')->unique();
             $table->string('email')->unique();
@@ -25,16 +23,8 @@ class CreateUsersTable extends Migration
             $table->rememberToken();
             $table->timestamps();
         });
-
-        if ((new User)->where('username', 'admin')->doesntExist()) {
-            User::create([
-                'name' => 'Administrator',
-                'username' => 'admin',
-                'email' => 'admin@notifyit.io',
-                'email_verified_at' => Carbon::now(),
-                'password' => 'admin',
-            ]);
-        }
+        $seeder = new UsersSeeder();
+        $seeder->run();
     }
 
     /**

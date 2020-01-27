@@ -2,43 +2,109 @@
 
 namespace App\Http\Controllers\Api\v1;
 
-use App\Jobs\SendPushJob;
-use App\Models\PushDevice;
-use App\Models\PushLog;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendPushJob;
+use App\Models\Credential;
+use App\Models\PushDevice;
+use App\Models\PushNotificationLog;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Support;
 
 class PushController extends Controller
 {
+    private $entries = 30;
 
-    public function status($uuid, Request $request)
+    public function index(Credential $credential)
     {
-        $app_id = $request->request_log->app_id;
-        $push = PushLog::whereAppId($app_id)->whereUuid($uuid)->first();
-        if ($push) {
-            return response()->json([
-                'push_uuid' => $uuid,
-                'status' => $push->status,
-                'data' => json_decode($push->data)
-            ]);
-        } else {
-            return response()->json(
-                [
-                    'status' => 'missing',
-                    'push_uuid' => $uuid
-                ],
-                404
-            );
-        }
+        return response()->json([
+            'message' => __('Showing Latest :entries entries', ['entries' => $this->entries]),
+            'data' => PushNotificationLog::whereCredentialId($credential->id)
+                ->orderBy('created_at', 'desc')->take($this->entries)->get()
+        ]);
     }
 
-    private function proccess(Request $request)
+    public function status($uuid, Credential $credential)
+    {
+        if ($push = PushNotificationLog::whereCredentialId($credential->id)->whereId($uuid)->first()) {
+            return response()->json([
+                'push_uuid' => $push->id,
+                'status' => $push->status,
+                'data' => $push->exception,
+                'extra' => $push->additional
+            ]);
+        }
+        return response()->json([
+            'status' => 'missing',
+            'push_uuid' => $uuid
+        ], 404);
+    }
+
+    public function register(Request $request, Credential $credential)
     {
         $this->validate($request, [
-            'to' => 'required|string',
-            'payload' => 'required|json'
+            'platform' => ['required', 'string'],
+            'identity' => ['required', 'string'],
+            'regid' => ['required', 'string']
+        ]);
+        $platform = $request->get('platform');
+        $identity = $request->get('identity');
+        $regid = $request->get('regid');
+        if (!$device = PushDevice::whereCredentialId($credential->id)
+            ->wherePlatform($platform)->whereIdentity($identity)->first()) {
+            $device = new PushDevice([
+                'credential_id' => $credential->id,
+                'platform' => $platform,
+                'uuid' => "UID:" . sha1($credential->id . $platform . $identity),
+                'identity' => $identity,
+                'regid' => $regid
+            ]);
+            $device->save();
+        }
+        if ($device->regid == $regid) {
+            return response()->json([
+                'device_uuid' => $device->uuid
+            ]);
+        }
+        $device->regid = $regid;
+        $device->save();
+
+        return response()->json([
+            'device_uuid' => $device->uuid
+        ]);
+
+    }
+
+    public function queue(Request $request, Credential $credential)
+    {
+        $details = $this->process($request, $credential);
+        dispatch(new SendPushJob($details));
+        return response()->json([
+            'push_uuid' => $details['uuid'],
+            'status' => 'queued',
+            'data' => [],
+            'extra' => []
+        ]);
+    }
+
+    public function now(Request $request, Credential $credential)
+    {
+        $details = $this->process($request, $credential);
+        dispatch((new SendPushJob($details))->onConnection('sync'));
+        $jobResult = PushNotificationLog::whereJobId($details['uuid'])->first();
+        return response()->json([
+            'push_uuid' => $details['uuid'],
+            'status' => $jobResult['status'],
+            'data' => $jobResult['exception'],
+            'extra' => $jobResult['additional']
+        ]);
+    }
+
+    private function process(Request $request, Credential $credential)
+    {
+        $this->validate($request, [
+            'to' => ['required', 'string'],
+            'payload' => ['required', 'json']
         ]);
         $json_request = $request->all();
         $json_request["to"] = json_decode($json_request["to"] ?? "[]");
@@ -46,12 +112,12 @@ class PushController extends Controller
         $request->merge($json_request);
         $this->validate($request,
             [
-                'to' => 'present|array',
+                'to' => ['present', 'array'],
                 'to.*' => [
                     'string',
                     'distinct',
                     Rule::exists('push_devices', 'uuid')
-                        ->where('app_id', $request->request_log->app_id)
+                        ->where('credential_id', $credential->id)
                 ]
             ],
             [
@@ -59,89 +125,17 @@ class PushController extends Controller
             ]
         );
         $details = [
-            'app_id' => $request->request_log->app_id,
+            'credential_id' => $credential->id,
+            'uuid' => Str::uuid(),
             'to' => $request->get('to'),
             'payload' => $request->get('payload'),
-            'uuid' => Support\Str::uuid()
         ];
-        (new PushLog)->create([
-            'app_id' => $details['app_id'],
-            'uuid' => $details['uuid'],
+        PushNotificationLog::create([
+            'credential_id' => $details['credential_id'],
+            'job_id' => $details['uuid'],
             'status' => 'queued',
-            'data' => json_encode([])
+            'payload' => $details
         ]);
         return $details;
-    }
-
-    public function queue(Request $request)
-    {
-        $details = $this->proccess($request);
-        dispatch(new SendPushJob($details));
-        return response()->json([
-            'push_uuid' => $details['uuid'],
-            'status' => 'queued',
-            'data' => json_encode([])
-        ]);
-    }
-
-    public function now(Request $request)
-    {
-        $details = $this->proccess($request);
-        $dispatch = dispatch_now(new SendPushJob($details));
-        return response()->json([
-            'push_uuid' => $details['uuid'],
-            'status' => $dispatch['status'],
-            'data' => json_decode($dispatch['data'])
-        ]);
-    }
-
-    public function register(Request $request)
-    {
-        $this->validate($request, [
-            'platform' => 'required|string',
-            'identity' => 'required|string',
-            'regid' => 'required|string'
-        ]);
-        $app_id = $request->request_log->app_id;
-        $platform = $request->get('platform');
-        $identity = $request->get('identity');
-        $uuid = "UID:" . sha1($app_id . $platform . $identity);
-        $regid = $request->get('regid');
-
-        if (!PushDevice::whereUuid($uuid)->exists()) {
-            $device = new PushDevice([
-                'app_id' => $app_id,
-                'platform' => $platform,
-                'uuid' => $uuid,
-                'identity' => $identity,
-                'regid' => $regid
-            ]);
-            $device->save();
-            return response()->json([
-                'device_uuid' => $device->uuid
-            ]);
-
-        }
-
-        $device = PushDevice::whereUuid($uuid)->first();
-        if ($device->regid == $regid) {
-            return response()->json([
-                'device_uuid' => $device->uuid
-            ]);
-        }
-//        TODO: Create this Log Table
-//        (new PushDeviceLog)->create([
-//            'device_id' => $device->id,
-//            'old_regid' => $device->regid,
-//            'new_regid' => $regid,
-//
-//        ])
-        $device->regid = $regid;
-
-        $device->save();
-
-        return response()->json([
-            'device_uuid' => $device->uuid
-        ]);
     }
 }

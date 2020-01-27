@@ -11,12 +11,6 @@
 |
 */
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Auth::routes(['register' => false]);
-
 Route::get('/', 'HomeController@index');
-Route::get('/home', 'HomeController@index')->name('home');
-
-Route::get('emails/{uuid}/download', 'EmailsController@download')->name('email.download');

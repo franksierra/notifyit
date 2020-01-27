@@ -2,9 +2,9 @@
 
 namespace App\Providers;
 
-use Laravel\Telescope\Telescope;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Telescope\IncomingEntry;
+use Laravel\Telescope\Telescope;
 use Laravel\Telescope\TelescopeApplicationServiceProvider;
 
 class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
@@ -17,6 +17,7 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     public function register()
     {
         Telescope::night();
+        Telescope::ignoreMigrations();
 
         $this->hideSensitiveRequestDetails();
 
@@ -35,16 +36,16 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
         if ($this->app->isLocal()) {
             return;
         }
-
-        Telescope::hideRequestParameters(
-            ['_token', 'request_log']
-        );
-
-        Telescope::hideRequestHeaders([
-            'cookie',
-            'x-csrf-token',
-            'x-xsrf-token',
-        ]);
+//
+//        Telescope::hideRequestParameters(
+//            ['_token', 'request_log']
+//        );
+//
+//        Telescope::hideRequestHeaders([
+//            'cookie',
+//            'x-csrf-token',
+//            'x-xsrf-token',
+//        ]);
     }
 
     /**

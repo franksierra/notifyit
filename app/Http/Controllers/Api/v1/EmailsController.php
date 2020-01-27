@@ -1,83 +1,118 @@
 <?php
 
-namespace App\Http\Controllers\api\v1;
+namespace App\Http\Controllers\Api\v1;
 
-use App\Jobs\SendEmailJob;
 use App\Http\Controllers\Controller;
-use App\Models\EmailLog;
+use App\Jobs\SendEmailJob;
+use App\Models\Credential;
+use App\Models\EmailNotificationLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class EmailsController extends Controller
 {
-    public function status($uuid, Request $request)
+    private $entries = 30;
+
+    public function index(Credential $credential)
     {
-        $app_id = $request->request_log->app_id;
-        $email = EmailLog::whereAppId($app_id)->whereUuid($uuid)->first();
-        if ($email) {
-            return response()->json([
-                'mail_uuid' => $uuid,
-                'status' => $email->status,
-                'data' => json_decode($email->data)
-            ]);
-        } else {
-            return response()->json(
-                [
-                    'status' => 'missing',
-                    'mail_uuid' => $uuid
-                ],
-                404
-            );
-        }
+        return response()->json([
+            'message' => __('Showing Latest :entries entries', ['entries' => $this->entries]),
+            'data' => EmailNotificationLog::whereCredentialId($credential->id)
+                ->orderBy('created_at', 'desc')->take($this->entries)->get()
+        ]);
     }
 
-    private function proccess(Request $request)
+    public function status($uuid, Credential $credential)
+    {
+        if ($email = EmailNotificationLog::whereCredentialId($credential->id)->whereId($uuid)->first()) {
+            return response()->json([
+                'mail_uuid' => $email->id,
+                'status' => $email->status,
+                'data' => $email->exception,
+                'extra' => $email->additional
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'missing',
+            'mail_uuid' => $uuid
+        ], 404);
+    }
+
+    public function queue(Request $request, Credential $credential)
+    {
+        $details = $this->process($request, $credential);
+        dispatch(new SendEmailJob($details));
+        return response()->json([
+            'mail_uuid' => $details['uuid'],
+            'status' => 'queued',
+            'data' => [],
+            'extra' => []
+        ]);
+    }
+
+    public function now(Request $request, Credential $credential)
+    {
+        $details = $this->process($request, $credential);
+        dispatch((new SendEmailJob($details))->onConnection('sync'));
+        $jobResult = EmailNotificationLog::whereJobId($details['uuid'])->first();
+        return response()->json([
+            'mail_uuid' => $details['uuid'],
+            'status' => $jobResult['status'],
+            'data' => $jobResult['exception'],
+            'extra' => $jobResult['additional']
+        ]);
+    }
+
+    private function process(Request $request, Credential $credential)
     {
         $this->validate($request, [
-            'name' => 'required|max:255',
-            'from' => 'required|email|max:255',
-            'reply_to' => 'nullable|email|max:255',
+            'name' => ['required', 'max:255'],
+            'from' => ['required', 'email', 'max:255'],
+            'reply_to' => ['nullable', 'email', 'max:255'],
 
-            'to' => 'nullable|json',
-            'cc' => 'nullable|json',
-            'bcc' => 'nullable|json',
+            'to' => ['nullable', 'json'],
+            'cc' => ['nullable', 'json'],
+            'bcc' => ['nullable', 'json'],
 
-            'subject' => 'required|max:255',
+            'subject' => ['required', 'max:255'],
 
-            'body' => 'required|string',
-            'alt_body' => 'nullable|string',
+            'body' => ['required', 'string'],
+            'alt_body' => ['nullable', 'string'],
 
-            'embedded' => 'nullable|json',
-            'attachments' => 'nullable|json',
+            'embedded' => ['nullable', 'json'],
+            'attachments' => ['nullable', 'json'],
         ]);
-        $json_request = $request->all();
-        $json_request["to"] = json_decode($json_request["to"] ?? "[]");
-        $json_request["cc"] = json_decode($json_request["cc"] ?? "[]");
-        $json_request["bcc"] = json_decode($json_request["bcc"] ?? "[]");
-        $json_request['mails'] = array_merge($json_request["to"], $json_request["cc"], $json_request["bcc"]);
-        $json_request["embedded"] = json_decode($json_request["embedded"] ?? "[]", JSON_OBJECT_AS_ARRAY);
-        $json_request["attachments"] = json_decode($json_request["attachments"] ?? "[]", JSON_OBJECT_AS_ARRAY);
-        $request->merge($json_request);
+        $jsonRequest = $request->all();
+        $jsonRequest["to"] = json_decode($jsonRequest["to"] ?? "[]");
+        $jsonRequest["cc"] = json_decode($jsonRequest["cc"] ?? "[]");
+        $jsonRequest["bcc"] = json_decode($jsonRequest["bcc"] ?? "[]");
+        $jsonRequest['mails'] = array_merge($jsonRequest["to"], $jsonRequest["cc"], $jsonRequest["bcc"]);
+        $jsonRequest["embedded"] = json_decode($jsonRequest["embedded"] ?? "[]", JSON_OBJECT_AS_ARRAY);
+        $jsonRequest["attachments"] = json_decode($jsonRequest["attachments"] ?? "[]", JSON_OBJECT_AS_ARRAY);
+        $request->merge($jsonRequest);
+
         $this->validate($request, [
-            'mails' => 'required|array|min:1',
-            'to.*' => 'email',
-            'cc.*' => 'email',
-            'bcc.*' => 'email',
+            'mails' => ['required', 'array', 'min:1'],
+            'to.*' => ['email'],
+            'cc.*' => ['email'],
+            'bcc.*' => ['email'],
 
-            'embedded' => 'present|array',
-            'embedded.*.name' => 'required|string|distinct',
-            'embedded.*.format' => 'required|string',
-            'embedded.*.b64' => 'required|string',
+            'embedded' => ['present', 'array'],
+            'embedded.*.name' => ['required', 'string', 'distinct'],
+            'embedded.*.format' => ['required', 'string'],
+            'embedded.*.b64' => ['required', 'string'],
 
-            'attachments' => 'present|array',
-            'attachments.*.name' => 'required|string|distinct',
-            'attachments.*.format' => 'required|string',
-            'attachments.*.b64' => 'required|string',
+            'attachments' => ['present', 'array'],
+            'attachments.*.name' => ['required', 'string', 'distinct'],
+            'attachments.*.format' => ['required', 'string'],
+            'attachments.*.b64' => ['required', 'string'],
         ]);
         $details = [
-            'app_id' => $request->request_log->app_id,
+            'credential_id' => $credential->id,
+            'uuid' => Str::uuid()->toString(),
 
-            'uuid' => Str::uuid(),
             'name' => $request->get('name'),
             'from' => $request->get('from'),
             'reply_to' => $request->get('reply_to', $request->get('from')),
@@ -88,39 +123,60 @@ class EmailsController extends Controller
             'subject' => $request->get('subject'),
             'body' => $request->get('body'),
             'alt_body' => $request->get('alt_body', ''),
-
             'embedded' => $request->get('embedded'),
             'attachments' => $request->get('attachments'),
-
         ];
-        (new EmailLog)->create([
-            'app_id' => $details['app_id'],
-            'uuid' => $details['uuid'],
+        $details = $this->storeData($details);
+        EmailNotificationLog::create([
+            'credential_id' => $details['credential_id'],
+            'job_id' => $details['uuid'],
             'status' => 'queued',
-            'data' => json_encode([])
+            'payload' => $details
         ]);
         return $details;
     }
 
-    public function queue(Request $request)
+    /**
+     * @param array $details
+     *
+     * @return array
+     */
+    private function storeData($details)
     {
-        $details = $this->proccess($request);
-        dispatch(new SendEmailJob($details));
-        return response()->json([
-            'mail_uuid' => $details['uuid'],
-            'status' => 'queued',
-            'data' => json_encode([])
-        ]);
-    }
+        $filePath = "emails/{$details['credential_id']}/{$details['uuid']}/";
+        $bodyFileName = "body.html";
+        $altBodyFileName = "alt_body.txt";
 
-    public function now(Request $request)
-    {
-        $details = $this->proccess($request);
-        $dispatch = dispatch_now(new SendEmailJob($details));
-        return response()->json([
-            'mail_uuid' => $details['uuid'],
-            'status' => $dispatch['status'],
-            'data' => json_decode($dispatch['data'])
-        ]);
+        Storage::disk('local')->put($filePath . $bodyFileName, $details['body']);
+        $details['body'] = $filePath . $bodyFileName;
+
+        Storage::disk('local')->put($filePath . $altBodyFileName, $details['alt_body']);
+        $details['alt_body'] = $filePath . $bodyFileName;
+
+        $embedded = $details['embedded'];
+        $details['embedded'] = [];
+        foreach ($embedded as $item) {
+            $fileName = "E_{$item["name"]}.{$item["format"]}";
+            Storage::disk('local')->put($filePath . $fileName, base64_decode($item["b64"]));
+            $email['embedded'][] = [
+                'format' => $item["format"],
+                'name' => $item["name"],
+                'file' => $filePath . $fileName
+            ];
+        }
+
+        $attachments = $details['attachments'];
+        $details['attachments'] = [];
+        foreach ($attachments as $item) {
+            $fileName = "A_{$item["name"]}.{$item["format"]}";
+            Storage::disk('local')->put($filePath . $fileName, base64_decode($item["b64"]));
+            $email['attachments'][] = [
+                'format' => $item["format"],
+                'name' => $item["name"],
+                'file' => $filePath . $fileName
+            ];
+        }
+
+        return $details;
     }
 }
