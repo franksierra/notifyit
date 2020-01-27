@@ -11,6 +11,10 @@
 |
 */
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', 'HomeController@index');
+Auth::routes(['register' => false]);
+
+Route::get('/', 'WelcomeController@index');
+Route::get('/home', 'HomeController@index')->name('home');
