@@ -40,7 +40,8 @@ class Kernel extends HttpKernel
         'api' => [
             'throttle:60,1',
             'bindings',
-            'api.response.json'
+            'api.response.json',
+            'api.request.log'
         ],
     ];
 
@@ -62,6 +63,7 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'api.request.log' => \App\Http\Middleware\RequestLog::class,
         'api.response.json' => \App\Http\Middleware\ForceJsonResponse::class,
         'api.auth' => \App\Http\Middleware\CredentialsApiKey::class,
     ];
