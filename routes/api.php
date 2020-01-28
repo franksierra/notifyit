@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,11 +37,4 @@ Route::middleware('api.auth')->namespace('Api')->group(function () {
             Route::post('/device', 'PushController@register')->name('api.push.register');
         });
     });
-
-//    Route::prefix('push')->group(function () {
-//
-//    });
-//    Route::prefix('sms')->group(function () {
-//
-//    });
 });
