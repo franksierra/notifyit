@@ -88,7 +88,8 @@ class SendEmailJob implements ShouldQueue
                 ->to($this->jobData['to'])
                 ->cc($this->jobData['cc'])
                 ->bcc($this->jobData['bcc'])
-                ->html($this->jobData['body']);
+                ->subject($this->jobData['subject'])
+                ->html(Storage::disk('local')->get($this->jobData['body']));
 
             foreach ($this->jobData['attachments'] as $attachment) {
                 if (Storage::disk('local')->exists($attachment['file'])) {

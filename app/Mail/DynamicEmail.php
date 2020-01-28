@@ -32,21 +32,23 @@ class DynamicEmail extends Mailable
      */
     protected function runCallbacks($message)
     {
+        $body = Storage::disk('local')->get($this->email['body']);
+        $altBody = Storage::disk('local')->get($this->email['alt_body']);
         foreach ($this->email['embedded'] as $embedded) {
             if (Storage::disk('local')->exists($embedded['file'])) {
                 $newCID = $message->embedData(
                     Storage::disk('local')->get($embedded['file']),
                     $embedded["name"] . "." . $embedded["format"]
                 );
-                $this->email['body'] = str_replace(
+                $body = str_replace(
                     "cid:" . $embedded["name"],
                     $newCID,
                     $this->email['body']
                 );
             }
         }
-        $message->addPart($this->email['body'], "text/html", "utf-8");
-        $message->addpart($this->email['alt_body'], "text/plain", "utf-8");
+        $message->addPart($body, "text/html", "utf-8");
+        $message->addpart($altBody, "text/plain", "utf-8");
         return $this;
     }
 
