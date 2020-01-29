@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Components\Sms\Facades\SMS;
+use App\Components\Sms\Facades\Sms;
 use App\Models\Credential;
 use App\Models\Notification\NotificationLog;
 use App\Models\SmsNotificationLog;
