@@ -43,7 +43,7 @@ class DynamicEmail extends Mailable
                 $body = str_replace(
                     "cid:" . $embedded["name"],
                     $newCID,
-                    $this->email['body']
+                    $body
                 );
             }
         }
