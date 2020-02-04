@@ -158,7 +158,7 @@ class EmailsController extends Controller
         foreach ($embedded as $item) {
             $fileName = "E_{$item["name"]}.{$item["format"]}";
             Storage::disk('local')->put($filePath . $fileName, base64_decode($item["b64"]));
-            $email['embedded'][] = [
+            $details['embedded'][] = [
                 'format' => $item["format"],
                 'name' => $item["name"],
                 'file' => $filePath . $fileName
@@ -170,7 +170,7 @@ class EmailsController extends Controller
         foreach ($attachments as $item) {
             $fileName = "A_{$item["name"]}.{$item["format"]}";
             Storage::disk('local')->put($filePath . $fileName, base64_decode($item["b64"]));
-            $email['attachments'][] = [
+            $details['attachments'][] = [
                 'format' => $item["format"],
                 'name' => $item["name"],
                 'file' => $filePath . $fileName
