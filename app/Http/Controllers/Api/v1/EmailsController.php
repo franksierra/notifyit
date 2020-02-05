@@ -151,7 +151,7 @@ class EmailsController extends Controller
         $details['body'] = $filePath . $bodyFileName;
 
         Storage::disk('local')->put($filePath . $altBodyFileName, $details['alt_body']);
-        $details['alt_body'] = $filePath . $bodyFileName;
+        $details['alt_body'] = $filePath . $altBodyFileName;
 
         $embedded = $details['embedded'];
         $details['embedded'] = [];

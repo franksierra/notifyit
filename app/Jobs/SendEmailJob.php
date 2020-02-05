@@ -2,13 +2,13 @@
 
 namespace App\Jobs;
 
-use App\Mail\DynamicEmail;
 use App\Models\Credential;
 use App\Models\EmailNotificationLog;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Mail\Message;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Config;
@@ -82,24 +82,40 @@ class SendEmailJob implements ShouldQueue
 
         Config::set('mail', $config);
         try {
-            $dynamicEmail = new DynamicEmail($this->jobData);
-            $dynamicEmail
-                ->from($this->jobData['from'], $this->jobData['name'])
-                ->to($this->jobData['to'])
-                ->cc($this->jobData['cc'])
-                ->bcc($this->jobData['bcc'])
-                ->subject($this->jobData['subject'])
-                ->html(Storage::disk('local')->get($this->jobData['body']));
+            Mail::send([], [], function (Message $message) {
+                $message->from($this->jobData['from'], $this->jobData['name'])
+                    ->to($this->jobData['to'])
+                    ->cc($this->jobData['cc'])
+                    ->bcc($this->jobData['bcc'])
+                    ->subject($this->jobData['subject']);
 
-            foreach ($this->jobData['attachments'] as $attachment) {
-                if (Storage::disk('local')->exists($attachment['file'])) {
-                    $dynamicEmail->attachData(
-                        Storage::disk('local')->get($attachment['file']),
-                        $attachment["name"] . "." . $attachment["format"]
-                    );
+                $body = Storage::disk('local')->get($this->jobData['body']);
+                $altBody = Storage::disk('local')->get($this->jobData['alt_body']);
+                foreach ($this->jobData['embedded'] as $embedded) {
+                    if (Storage::disk('local')->exists($embedded['file'])) {
+                        $newCID = $message->embedData(
+                            Storage::disk('local')->get($embedded['file']),
+                            $embedded["name"] . "." . $embedded["format"],
+                            'image/' . $embedded["format"]
+                        );
+                        $body = str_replace(
+                            'cid:' . $embedded['name'],
+                            $newCID,
+                            $body
+                        );
+                    }
                 }
-            }
-            Mail::send($dynamicEmail);
+                $message->addPart($body, "text/html", "utf-8");
+                $message->addpart($altBody, "text/plain", "utf-8");
+                foreach ($this->jobData['attachments'] as $attachment) {
+                    if (Storage::disk('local')->exists($attachment['file'])) {
+                        $message->attachData(
+                            Storage::disk('local')->get($attachment['file']),
+                            $attachment["name"] . "." . $attachment["format"]
+                        );
+                    }
+                }
+            });
         } catch (Exception $email_not_sent) {
             return $this->fail($email_not_sent);
         }
