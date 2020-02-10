@@ -101,7 +101,7 @@ class SendPushJob implements ShouldQueue
             $fails = [];
             foreach ($pushFails as $pushFail) {
                 $fails[] = [
-                    'to' => $regidToUid[$pushFail['to']],
+                    'to' => $regidToUid[$pushFail['to']] ?? $pushFail['to'],
                     'detail' => $pushFail['detail']
                 ];
             }
