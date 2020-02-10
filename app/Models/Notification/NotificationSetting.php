@@ -11,6 +11,7 @@ abstract class NotificationSetting extends Notification
 
     protected $fillable = [
         'credential_id',
+        'driver',
         'config',
     ];
 
