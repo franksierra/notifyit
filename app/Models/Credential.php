@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\UuidKey;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 /**
  * App\Models\Credential
@@ -46,7 +47,7 @@ class Credential extends Model
      * @var array
      */
     protected $fillable = [
-        'project_id', 'api_key',
+        'project_id', 'production', 'prefix', 'prefix_value', 'api_key'
     ];
 
     /**
@@ -60,6 +61,15 @@ class Credential extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        self::creating(function (Model $model) {
+            $model->api_key = 'Tars_' . Str::random(40);
+        });
+    }
+
 
     public function project()
     {
