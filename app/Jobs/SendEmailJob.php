@@ -126,7 +126,8 @@ class SendEmailJob implements ShouldQueue
          */
         $emailFails = Mail::failures();
         if (count($emailFails) > 0) {
-            $email_not_sent = new Exception("Some recipients couldn't receive the message");
+            $failsString = json_encode($emailFails);
+            $email_not_sent = new Exception("Some recipients couldn't receive the message ($failsString)");
             $this->notificationLog->additional = ['fails' => $emailFails];
             return $this->fail($email_not_sent);
         }
