@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\PushNotificationSetting;
 use App\Models\SmsNotificationSetting;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 
 class CreateSettings extends Command
@@ -201,7 +202,7 @@ class CreateSettings extends Command
                         ]);
                         break;
                 }
-
+                Artisan::call("horizon:terminate --wait");
             }
         }
 
