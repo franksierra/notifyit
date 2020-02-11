@@ -105,23 +105,23 @@ class CreateSettings extends Command
                     ];
                     break;
                 case 'email':
-                    $driver = $driver = $this->choice(
+                    $driver = $this->choice(
                         'Select the Driver you wish to use',
                         ['null', 'smtp'],
                         'null'
                     );
                     switch ($driver) {
-                        case 'eclipsoft':
+                        case 'smtp':
                             $config = [
-                                "host" => $this->ask('What is the Server?'),
+                                "host" => $this->ask('What is the Server?','smtp.mandrillapp.com'),
                                 "port" => $this->ask('Witch port?', 587),
                                 "encryption" => Str::upper($this->choice(
                                     'Witch encryption do you wish to use:',
                                     ['TLS', 'STARTTLS'],
                                     'TLS'
                                 )),
-                                "username" => $this->ask('Username?', ''),
-                                "password" => $this->secret('Password?'),
+                                "username" => $this->ask('Username?', 'maildelivery@ec.geainternacional.com'),
+                                "password" => $this->ask('Password?'),
                                 "mail_type" => "HTML"
                             ];
                             break;
