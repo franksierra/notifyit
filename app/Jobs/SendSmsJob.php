@@ -75,7 +75,7 @@ class SendSmsJob implements ShouldQueue
         }
 
         $config = $setting->config;
-        $config['driver'] = 'null';
+        $config['driver'] = $setting->driver;
 
         Config::set('sms', $config);
 
