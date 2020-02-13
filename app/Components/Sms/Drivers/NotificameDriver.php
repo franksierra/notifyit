@@ -4,7 +4,6 @@ namespace App\Components\Sms\Drivers;
 
 use App\Components\Sms\Contracts\Driver;
 use GuzzleHttp\Client;
-use SoapFault;
 
 class NotificameDriver implements Driver
 {
@@ -33,7 +32,7 @@ class NotificameDriver implements Driver
      * @param $recipients
      * @param $message
      * @param array $failedRecipients
-     * @throws SoapFault
+     * @throws \Exception
      */
     public function send($recipients, $message, &$failedRecipients = [])
     {
@@ -58,6 +57,8 @@ class NotificameDriver implements Driver
                         'to' => $to
                     ];
                 }
+            }else{
+                throw new \Exception($response->getBody());
             }
         }
     }
