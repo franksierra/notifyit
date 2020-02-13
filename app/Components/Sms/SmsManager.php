@@ -2,6 +2,7 @@
 
 namespace App\Components\Sms;
 
+use App\Components\Sms\Drivers\NotificameDriver;
 use App\Components\Sms\Drivers\NullDriver;
 use App\Components\Sms\Drivers\EclipSoftDriver;
 use Illuminate\Support\Manager;
@@ -25,6 +26,16 @@ class SmsManager extends Manager
     public function createEclipSoftDriver()
     {
         return new EclipSoftDriver($this->config["sms"]);
+    }
+
+    /**
+     * Create an instance of Notificame sms Driver
+     *
+     * @return NotificameDriver
+     */
+    public function createNotificameDriver()
+    {
+        return new NotificameDriver($this->config["sms"]);
     }
 
     /**
