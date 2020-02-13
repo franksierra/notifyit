@@ -37,8 +37,14 @@ class NotificameDriver implements Driver
     public function send($recipients, $message, &$failedRecipients = [])
     {
         foreach ($recipients as $to) {
+
+            /* Quito Cualquier posible prefijo si coincide con el actual */
+            $prefix = $this->config['prefix'];
+            $pattern = "/^[0|+]*$prefix/";
+            $to = preg_replace($pattern, "", $to);
+
             $url = $this->config['endpoint'] . 'http/send_to_contact?';
-            $url .= 'msisdn=' . $this->config['prefix'] . $to;
+            $url .= 'msisdn=' . $prefix . $to;
             $url .= '&message=' . $message;
             if (isset($this->config['api_key'])) {
                 $url .= '&api_key=' . $this->config['api_key'];
@@ -57,7 +63,7 @@ class NotificameDriver implements Driver
                         'to' => $to
                     ];
                 }
-            }else{
+            } else {
                 throw new \Exception($response->getBody());
             }
         }
