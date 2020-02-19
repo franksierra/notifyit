@@ -138,7 +138,7 @@ class CreateSettings extends Command
                     switch ($driver) {
                         case 'eclipsoft':
                             $config = [
-                                'endpoint' => 'https://app2.eclipsoft.com:9443/SMSEmpresarial/wfrmLogin.aspx',
+                                'endpoint' => 'https://app2.eclipsoft.com:9443/wsSMSEmpresarial/wscSMSEmp.asmx?WSDL',
                                 "service" => "CONTACTOSMS",
                                 "emitter" => "GEANOTIFICACION",
                                 "login" => "admin",
