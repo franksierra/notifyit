@@ -83,13 +83,13 @@ class CreateSettings extends Command
                 )
             );
             $types = [];
-            if ($emailSettings) {
+            if (count($emailSettings)==0) {
                 $types[] = "email";
             }
-            if ($pushSettings) {
+            if (count($pushSettings)==0) {
                 $types[] = "push";
             }
-            if ($smsSettings) {
+            if (count($smsSettings)==0) {
                 $types[] = "sms";
             }
             $type = $this->choice('Witch type do you wish to configure:', $types);

@@ -21,7 +21,6 @@ abstract class NotificationLog extends Notification
 
     protected $hidden = [
         'credential_id',
-        'type',
     ];
 
     protected $casts = [

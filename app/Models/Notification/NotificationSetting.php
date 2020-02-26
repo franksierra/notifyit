@@ -15,9 +15,12 @@ abstract class NotificationSetting extends Notification
         'config',
     ];
 
+    protected $guarded = [
+        'type',
+    ];
+
     protected $hidden = [
         'credential_id',
-        'type',
     ];
 
     protected $casts = [
